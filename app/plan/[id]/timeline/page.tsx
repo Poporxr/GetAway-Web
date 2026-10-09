@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPlan } from "@/lib/data";
 import PlanTabs from "@/components/PlanTabs";
 import SaveButton from "@/components/SaveButton";
+import CtaButton from "@/components/CtaButton";
 import { BackIcon } from "@/components/icons";
 
 export default async function PlanTimelinePage({
@@ -43,9 +44,7 @@ export default async function PlanTimelinePage({
 
       {/* Sticky CTA */}
       <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent px-5 pb-6 pt-8">
-        <button className="w-full rounded-full bg-neutral-950 py-4 text-[15px] font-bold text-white shadow-xl transition-transform active:scale-[0.98]">
-          Start plan
-        </button>
+        <CtaButton>Start plan</CtaButton>
       </div>
     </main>
   );

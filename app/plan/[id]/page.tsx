@@ -4,6 +4,7 @@ import { decisionLine, formatCost, getPlan, similarPlans } from "@/lib/data";
 import BottomNav from "@/components/BottomNav";
 import ReadMore from "@/components/ReadMore";
 import SaveButton from "@/components/SaveButton";
+import { CtaLink } from "@/components/CtaButton";
 import { PlanRailCard, VerifiedBadge } from "@/components/PlanCards";
 import { ArrowIcon, BackIcon, PinIcon, StarIcon } from "@/components/icons";
 
@@ -123,13 +124,10 @@ export default async function PlanDetailPage({
 
       {/* CTA */}
       <div className="px-5 pt-8">
-        <Link
-          href={`/plan/${plan.id}/timeline`}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-neutral-950 py-4 text-[15px] font-bold text-white shadow-xl transition-transform active:scale-[0.98]"
-        >
+        <CtaLink href={`/plan/${plan.id}/timeline`}>
           View timeline
           <ArrowIcon className="h-5 w-5" />
-        </Link>
+        </CtaLink>
         <p className="mt-3 text-center text-xs text-neutral-400">
           {decisionLine(plan)}
         </p>

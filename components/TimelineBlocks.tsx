@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import type { TimelineBlock } from "@/lib/data";
 import { ChevronIcon } from "./icons";
 
@@ -38,31 +39,43 @@ export default function TimelineBlocks({
                     : ""}
                 </p>
               </div>
-              <ChevronIcon
-                className={`h-5 w-5 shrink-0 text-neutral-400 transition-transform ${
-                  isOpen ? "rotate-180" : ""
-                }`}
-              />
+              <motion.span
+                animate={{ rotate: isOpen ? 180 : 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                className="flex shrink-0"
+              >
+                <ChevronIcon className="h-5 w-5 text-neutral-400" />
+              </motion.span>
             </button>
-            {isOpen && (
-              <div className="space-y-4 border-t border-neutral-100 px-4 py-4">
-                {block.items.map((item) => (
-                  <div key={item.title} className="flex gap-4">
-                    <p className="w-12 shrink-0 pt-0.5 text-xs font-bold text-neutral-400">
-                      {item.time}
-                    </p>
-                    <div>
-                      <p className="text-[15px] font-bold text-neutral-950">
-                        {item.title}
-                      </p>
-                      <p className="mt-0.5 text-sm leading-relaxed text-neutral-500">
-                        {item.detail}
-                      </p>
-                    </div>
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-4 border-t border-neutral-100 px-4 py-4">
+                    {block.items.map((item) => (
+                      <div key={item.title} className="flex gap-4">
+                        <p className="w-12 shrink-0 pt-0.5 text-xs font-bold text-neutral-400">
+                          {item.time}
+                        </p>
+                        <div>
+                          <p className="text-[15px] font-bold text-neutral-950">
+                            {item.title}
+                          </p>
+                          <p className="mt-0.5 text-sm leading-relaxed text-neutral-500">
+                            {item.detail}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         );
       })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 import {
   SAMPLE_ITINERARY,
   VIBES,
@@ -144,9 +145,13 @@ export default function PlannerPage() {
           </div>
         </section>
 
-        <button className="w-full rounded-full bg-neutral-950 py-4 text-[15px] font-bold text-white shadow-xl transition-transform active:scale-[0.98]">
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 500, damping: 25 }}
+          className="w-full rounded-full bg-neutral-950 py-4 text-[15px] font-bold text-white shadow-xl"
+        >
           Build my getaway
-        </button>
+        </motion.button>
       </div>
 
       {/* Sample generated itinerary */}

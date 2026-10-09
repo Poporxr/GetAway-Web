@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 import {
   BagIcon,
   ListIcon,
@@ -55,13 +56,23 @@ export default function BottomNav() {
         aria-label={label}
         className="flex w-14 flex-col items-center gap-1 py-1"
       >
-        <span
+        <motion.span
+          animate={{ scale: isActive ? 1 : 0.92 }}
+          transition={{ type: "spring", stiffness: 500, damping: 22 }}
           className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
             isActive ? "bg-white text-neutral-950" : "text-white/70"
           }`}
         >
-          <Icon className="h-5 w-5" />
-        </span>
+          <motion.span
+            key={String(isActive)}
+            initial={{ scale: 0.6 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 600, damping: 18 }}
+            className="flex"
+          >
+            <Icon className="h-5 w-5" />
+          </motion.span>
+        </motion.span>
         <span
           className={`text-[10px] font-semibold ${
             isActive ? "text-white" : "text-white/50"
@@ -84,15 +95,25 @@ export default function BottomNav() {
           aria-label="Plan"
           className="flex w-14 flex-col items-center gap-1"
         >
-          <span
+          <motion.span
+            whileTap={{ scale: 0.88 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
             className={`-mt-9 flex h-14 w-14 items-center justify-center rounded-full shadow-xl ring-4 ring-neutral-950 transition-colors ${
               isPlanActive
                 ? "bg-emerald-400 text-neutral-950"
                 : "bg-white text-neutral-950"
             }`}
           >
-            <ListIcon className="h-6 w-6" />
-          </span>
+            <motion.span
+              key={String(isPlanActive)}
+              initial={{ scale: 0.6, rotate: -12 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 600, damping: 18 }}
+              className="flex"
+            >
+              <ListIcon className="h-6 w-6" />
+            </motion.span>
+          </motion.span>
           <span
             className={`text-[10px] font-semibold ${
               isPlanActive ? "text-white" : "text-white/50"

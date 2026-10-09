@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "motion/react";
 import type { Plan } from "@/lib/data";
 import { CheckIcon, StarIcon } from "./icons";
+
+const MotionLink = motion.create(Link);
 
 export function RatingPill({ plan }: { plan: Plan }) {
   return (
@@ -28,8 +33,11 @@ export function VerifiedBadge({ dark = false }: { dark?: boolean }) {
 /** Small horizontal card used in "Tonight near you" / "More like this" rails. */
 export function PlanRailCard({ plan }: { plan: Plan }) {
   return (
-    <Link
+    <MotionLink
       href={`/plan/${plan.id}`}
+      whileTap={{ scale: 0.96 }}
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className="w-40 shrink-0 snap-start overflow-hidden rounded-3xl bg-white shadow-[0_8px_30px_-18px_rgba(0,0,0,0.25)]"
     >
       <div className="relative aspect-[4/5] overflow-hidden">
@@ -51,6 +59,6 @@ export function PlanRailCard({ plan }: { plan: Plan }) {
           <VerifiedBadge />
         </div>
       </div>
-    </Link>
+    </MotionLink>
   );
 }

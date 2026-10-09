@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
+import { Dices } from "lucide-react";
 import { DURATIONS, PLANS, decisionLine, type Plan } from "@/lib/data";
 import { ArrowIcon } from "./icons";
 import { VerifiedBadge } from "./PlanCards";
@@ -19,10 +21,15 @@ function pickForMood(mood: string, excludeId?: string): Plan {
 /** Dark decision card: named experience + context + mini-plan + time/cost/distance. */
 function DecisionCard({ plan }: { plan: Plan }) {
   return (
-    <Link
-      href={`/plan/${plan.id}`}
-      className="block rounded-[1.75rem] bg-neutral-950 p-6 text-white shadow-[0_24px_60px_-24px_rgba(0,0,0,0.5)] transition-transform active:scale-[0.99]"
+    <motion.div
+      whileTap={{ scale: 0.99 }}
+      whileHover={{ y: -3 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
     >
+      <Link
+        href={`/plan/${plan.id}`}
+        className="block rounded-[1.75rem] bg-neutral-950 p-6 text-white shadow-[0_24px_60px_-24px_rgba(0,0,0,0.5)]"
+      >
       <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/50">
         Decided for you
       </p>
@@ -45,7 +52,8 @@ function DecisionCard({ plan }: { plan: Plan }) {
         See the plan
         <ArrowIcon className="h-4 w-4" />
       </span>
-    </Link>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -83,12 +91,15 @@ export default function DecisionSection() {
           </span>{" "}
           free
         </h2>
-        <button
+        <motion.button
           onClick={surprise}
-          className="shrink-0 rounded-full bg-neutral-950 px-4 py-2 text-sm font-bold text-white transition-transform active:scale-95"
+          whileTap={{ rotate: [0, -10, 10, -6, 6, 0], scale: [1, 0.93, 1] }}
+          transition={{ duration: 0.45 }}
+          className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-950 px-4 py-2 text-sm font-bold text-white"
         >
+          <Dices className="h-4 w-4" strokeWidth={2} />
           Surprise me
-        </button>
+        </motion.button>
       </div>
 
       {/* Duration pills */}
@@ -127,7 +138,17 @@ export default function DecisionSection() {
 
       {/* Decision hero */}
       <div className="mt-4">
-        <DecisionCard plan={hero} />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={hero.id}
+            initial={{ opacity: 0, y: 14, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.99 }}
+            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+          >
+            <DecisionCard plan={hero} />
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
   );
