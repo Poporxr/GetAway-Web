@@ -10,6 +10,7 @@
 import type { ShirtType, Surface } from './uv';
 import { quote, POLICY_VERSION } from './money';
 import { signatureBox, withinBounds, findCollision, MAX_SIGNATURES_PER_SHIRT } from './signatures';
+import { MAX_TEXT_LEN } from './text';
 
 // ---------- types (same shapes the old server store used) ----------
 export interface User { id: string; name: string; email: string; passwordHash: string; createdAt: string }
@@ -41,8 +42,8 @@ export interface Stroke { color: string; width: number; points: { x: number; y: 
 export interface SignatureRec {
   id: string; shirtId: string; paymentId: string; contributorName: string;
   surface: Surface; x: number; y: number; w: number; h: number; rotation: number;
-  color: string; mode: 'draw' | 'type';
-  strokes?: Stroke[]; text?: string; aspect: number; size: number;
+  color: string; mode: 'draw' | 'type' | 'text';
+  strokes?: Stroke[]; text?: string; font?: string; aspect: number; size: number;
   createdAt: string;
 }
 export interface LedgerEntry {
@@ -236,7 +237,7 @@ function seed(): DB {
     typedSig({ shirtId: tee.id, paymentId: p2.id, contributorName: 'Tobi M.', surface: 'front', x: 0.62, y: 0.48, text: 'Tobi M.', color: '#1f2430', size: 2, rotation: 3 }),
     typedSig({ shirtId: tee.id, paymentId: p3.id, contributorName: 'Mum', surface: 'front', x: 0.50, y: 0.72, text: 'Mum ❤', color: '#d81f3e', size: 4, rotation: -2 }),
     typedSig({ shirtId: tee.id, paymentId: p4.id, contributorName: 'Kunle S.', surface: 'back', x: 0.42, y: 0.35, text: 'Kunle S.', color: '#0d9e57', size: 1, rotation: 5 }),
-    typedSig({ shirtId: tee.id, paymentId: p5.id, contributorName: 'Fatima B.', surface: 'back', x: 0.55, y: 0.58, text: 'Fatima B.', color: '#7c3aed', size: 3, rotation: -3 }),
+    typedSig({ shirtId: tee.id, paymentId: p5.id, contributorName: 'Fatima B.', surface: 'back', x: 0.55, y: 0.58, text: 'Fatima B.', color: '#0f766e', size: 3, rotation: -3 }),
     typedSig({ shirtId: longsleeve.id, paymentId: p6.id, contributorName: 'Chidi O.', surface: 'front', x: 0.50, y: 0.40, text: 'Chidi O.', color: '#1e40d8', size: 1, rotation: 0 }),
   );
   // fill in footprint heights with the shared box math (region aspect differs per shirt)
@@ -588,10 +589,11 @@ export function submitSignature(token: string, body: any):
     if (existing.length >= MAX_SIGNATURES_PER_SHIRT) return { error: 'This shirt is full.' };
 
     // sanitize the signature asset
-    const aspect = Math.max(0.8, Math.min(6, Number(body.aspect) || 2.5));
+    const aspect = Math.max(0.5, Math.min(6, Number(body.aspect) || 2.5));
     const color = /^#[0-9a-fA-F]{6}$/.test(String(body.color)) ? String(body.color) : '#1f2430';
     let strokes: Stroke[] | undefined;
     let text: string | undefined;
+    let font: string | undefined;
     if (body.mode === 'draw') {
       if (!Array.isArray(body.strokes) || !body.strokes.length) return { error: 'Your signature looks empty.' };
       let totalPoints = 0;
@@ -609,9 +611,13 @@ export function submitSignature(token: string, body: any):
         });
       }
       if (totalPoints > 20000 || !strokes.length) return { error: 'Signature drawing is too large.' };
-    } else if (body.mode === 'type') {
-      text = String(body.text || '').trim().slice(0, 24);
-      if (!text) return { error: 'Type a signature first.' };
+    } else if (body.mode === 'type' || body.mode === 'text') {
+      // 'type' is the legacy single-font mode; new clients send 'text' with a
+      // font choice and may include emojis. Both store the same way.
+      text = String(body.text || '').trim().slice(0, MAX_TEXT_LEN);
+      if (!text) return { error: 'Write something first — a name, a note, an emoji.' };
+      font = ['hand', 'sans', 'display'].includes(String(body.font)) ? String(body.font) : 'hand';
+      body.mode = 'text';
     } else {
       return { error: 'Invalid signature mode.' };
     }
@@ -619,7 +625,9 @@ export function submitSignature(token: string, body: any):
     const x = Number(body.x), y = Number(body.y);
     const rotation = Math.max(-30, Math.min(30, Number(body.rotation) || 0));
     if (!Number.isFinite(x) || !Number.isFinite(y)) return { error: 'Invalid placement.' };
-    const box = signatureBox(shirt.type, body.surface, ent.size, aspect, x, y);
+    // the signer may shrink the box below the entitlement's width, never above
+    const scale = Math.max(0.4, Math.min(1, Number(body.scale) || 1));
+    const box = signatureBox(shirt.type, body.surface, ent.size, aspect, x, y, scale);
     if (!withinBounds(box)) return { error: 'Your signature crosses the edge of the signing area.' };
     if (findCollision(shirt.type, body.surface, box, existing)) {
       return { error: 'That spot overlaps another signature. Pick a free space.' };
@@ -629,7 +637,7 @@ export function submitSignature(token: string, body: any):
       id: id('sig'), shirtId: shirt.id, paymentId: payment.id,
       contributorName: payment.contributorName,
       surface: body.surface, x, y, w: box.w, h: box.h, rotation,
-      color, mode: body.mode, strokes, text, aspect, size: ent.size,
+      color, mode: body.mode, strokes, text, font, aspect, size: ent.size,
       createdAt: nowISO(),
     };
     db.signatures.push(sig);

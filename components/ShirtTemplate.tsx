@@ -23,22 +23,30 @@ export default function ShirtTemplate({
   regionRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
-    <div className="relative mx-auto w-full max-w-[340px] select-none">
-      <svg viewBox="0 0 240 240" className="w-full drop-shadow-sm" role="img" aria-label={`${type} ${surface} template`}>
-        <path d={SILHOUETTES[type]} fill="#f7f5ef" stroke="#d8d2c4" strokeWidth="2.5" />
+    <div className="relative mx-auto w-full max-w-[380px] select-none">
+      <svg viewBox="0 0 240 246" className="w-full" role="img" aria-label={`${type} ${surface} template`}>
+        <path d={SILHOUETTES[type]} fill="#ffffff" stroke="#d6d3d1" strokeWidth="2" />
+        {type === 'tee' && (
+          <path d="M82 26 Q120 46 158 26 Q120 58 82 26 Z" fill="#f5f5f4" stroke="#d6d3d1" strokeWidth="1.6" />
+        )}
         {type === 'longsleeve' && (
-          <g stroke="#d8d2c4" strokeWidth="2">
-            <line x1="120" y1="42" x2="120" y2="226" strokeDasharray="5 5" />
-            {[70, 105, 140, 175, 208].map((y) => (
-              <circle key={y} cx="120" cy={y} r="3" fill="#efece3" />
+          <g stroke="#d6d3d1" strokeWidth="1.6">
+            {/* collar */}
+            <path d="M84 27 L120 52 L156 27 L142 22 L120 38 L98 22 Z" fill="#f5f5f4" />
+            {/* button placket */}
+            <line x1="120" y1="52" x2="120" y2="224" />
+            {[76, 106, 136, 166, 196].map((y) => (
+              <circle key={y} cx="120" cy={y} r="2.6" fill="#e7e5e4" stroke="none" />
             ))}
+            {/* cuffs */}
+            <line x1="38" y1="188" x2="62" y2="190" />
+            <line x1="178" y1="190" x2="202" y2="188" />
           </g>
         )}
-        <text x="120" y="240" textAnchor="middle" fontSize="0.1" fill="none">{surface}</text>
       </svg>
       <div
         ref={regionRef}
-        className="absolute rounded-lg border-2 border-dashed border-violet-300/80 bg-violet-50/30"
+        className="absolute rounded-lg border border-dashed border-stone-300 bg-stone-50/70"
         style={REGION_STYLE}
       >
         {signatures.map((s) => (
@@ -46,17 +54,18 @@ export default function ShirtTemplate({
             key={s.id}
             className="absolute"
             style={{
-              left: `${s.x * 100}%`, top: `${s.y * 100}%`, width: `${s.w * 100}%`,
+              left: `${s.x * 100}%`, top: `${s.y * 100}%`,
+              width: `${s.w * 100}%`, height: `${s.h * 100}%`,
               transform: `translate(-50%,-50%) rotate(${s.rotation}deg)`,
             }}
           >
-            <SignaturePreview sig={s} regionWidthPct={s.w * 100} />
+            <SignaturePreview sig={s} />
           </div>
         ))}
         {children}
       </div>
-      <p className="mt-1 text-center text-[11px] font-medium uppercase tracking-widest text-stone-400">
-        {surface === 'front' ? 'Front' : 'Back'}
+      <p className="mt-2 text-center text-[11px] font-semibold uppercase tracking-widest text-stone-400">
+        {surface === 'front' ? 'Front of shirt' : 'Back of shirt'}
       </p>
     </div>
   );

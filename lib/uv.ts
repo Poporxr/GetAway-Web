@@ -13,14 +13,14 @@ interface ModelCfg {
 
 export const MODELS: Record<ShirtType, { file: string; label: string; blurb: string }> = {
   tee: {
-    file: 'https://res.cloudinary.com/doc3mb9if/raw/upload/v1794134836/signout/tee.glb',
+    file: 'https://res.cloudinary.com/doc3mb9if/raw/upload/v1794140365/signout/tee-v2.glb',
     label: 'Classic Tee',
-    blurb: 'Short-sleeve · pure white · oversized crew neck',
+    blurb: 'Short-sleeve · pure white · natural drape, relaxed fit',
   },
   longsleeve: {
-    file: 'https://res.cloudinary.com/doc3mb9if/raw/upload/v1794134837/signout/longsleeve.glb',
-    label: 'Long-Sleeve Shirt',
-    blurb: 'Long-sleeve · pure white · relaxed fit',
+    file: 'https://res.cloudinary.com/doc3mb9if/raw/upload/v1794140366/signout/buttondown-v2.glb',
+    label: 'Button-Down Shirt',
+    blurb: 'Long-sleeve · pure white · collar & button placket',
   },
 };
 

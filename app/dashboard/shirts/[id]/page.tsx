@@ -19,9 +19,9 @@ export default function ShirtDetailPage() {
   if (!shirt) {
     return (
       <div className="py-16 text-center">
-        <h2 className="text-xl font-extrabold text-stone-900">Shirt not found</h2>
+        <h2 className="text-xl font-bold tracking-tight text-stone-900">Shirt not found</h2>
         <p className="mt-1 text-sm text-stone-500">This shirt does not exist in this browser&apos;s store, or it is not yours.</p>
-        <Link href="/dashboard" className="mt-4 inline-block rounded-full bg-violet-600 px-5 py-2.5 text-sm font-bold text-white">← All shirts</Link>
+        <Link href="/dashboard" className="btn-primary mt-4">All shirts</Link>
       </div>
     );
   }
@@ -34,23 +34,23 @@ export default function ShirtDetailPage() {
 
   return (
     <div>
-      <Link href="/dashboard" className="text-sm font-bold text-violet-700">← All shirts</Link>
+      <Link href="/dashboard" className="text-sm font-semibold text-emerald-700 hover:text-emerald-800">← All shirts</Link>
       <div className="mt-3 grid gap-5 lg:grid-cols-5">
-        <div className="overflow-hidden rounded-3xl bg-gradient-to-b from-violet-50 to-amber-50 ring-1 ring-stone-200/70 lg:col-span-3">
+        <div className="card overflow-hidden lg:col-span-3"><div className="bg-[#f4f4f2]">
           <ShirtViewer type={shirt.type} signatures={sigs} height={440} />
-        </div>
+        </div></div>
         <div className="lg:col-span-2">
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200/70">
-            <h2 className="font-extrabold text-stone-900">{shirt.type === 'tee' ? 'Classic Tee' : 'Long-Sleeve Shirt'}</h2>
+          <div className="card p-5">
+            <h2 className="font-semibold tracking-tight text-stone-900">{shirt.type === 'tee' ? 'Classic Tee' : 'Button-Down Shirt'}</h2>
             <p className="mt-1 text-sm text-stone-500">{sigs.length} signatures · {gifts.length} gifts · {fmt(gifts.reduce((a, p) => a + p.giftKobo, 0))} gifted</p>
-            <div className="mt-3 flex items-center gap-2 rounded-2xl bg-stone-50 p-2 pl-3">
+            <div className="mt-3 flex items-center gap-2 rounded-xl bg-stone-50 p-2 pl-3 ring-1 ring-stone-200/70">
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-stone-600">{url}</span>
               <CopyButton text={url} />
             </div>
-            <Link href={`/s/${shirt.slug}`} className="mt-3 inline-block rounded-full bg-stone-900 px-4 py-2 text-sm font-bold text-white">Open public page</Link>
+            <Link href={`/s/${shirt.slug}`} className="btn-primary mt-3 px-4 py-2">Open public page</Link>
           </div>
-          <div className="mt-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200/70">
-            <h3 className="font-bold text-stone-900">Signatures on this shirt</h3>
+          <div className="card mt-4 p-5">
+            <h3 className="font-semibold tracking-tight text-stone-900">Signatures on this shirt</h3>
             {sigs.length === 0 ? (
               <p className="mt-2 text-sm text-stone-400">None yet — share your link and the ink will come.</p>
             ) : (

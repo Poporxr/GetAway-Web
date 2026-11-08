@@ -5,11 +5,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        paper: "#FAF8F3",
-        cream: "#F3EFE3",
+        paper: "#FAFAF9",
       },
       fontFamily: {
+        sans: ["Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
         hand: ["Caveat", "Segoe Script", "cursive"],
+        display: ['"Archivo Black"', "Inter", "sans-serif"],
       },
     },
   },

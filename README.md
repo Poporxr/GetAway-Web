@@ -36,6 +36,16 @@ current user id. Consequences, by design:
   (demo owner, two shirts, six gifts, six signatures).
 - Nothing you do in the app leaves your device.
 
+## Design system
+
+Premium neutral SaaS (Linear/Stripe register): white and warm stone
+neutrals, near-black ink, one restrained accent (deep emerald) reserved for
+highlights and success states, black primary buttons. Inter for UI text,
+Caveat / Archivo Black only inside signature content. No purple, no
+gradients, no decorative blobs. Shared primitives (`.card`, `.btn-primary`,
+`.btn-accent`, `.btn-secondary`, `.input`, `.label`) live in
+`app/globals.css`. Layouts are mobile-first and hold at 390px.
+
 ## What is real vs mocked
 
 **Real (full business logic, running client-side in `lib/localstore.ts`):**
@@ -47,10 +57,17 @@ current user id. Consequences, by design:
 - Pay-before-sign: a settled payment issues a single-use signing entitlement
   (24h validity) tied to the transaction; signing consumes it; the token URL
   is the resume link for the paid-but-interrupted case.
-- Signature editor: draw on a canvas pad (strokes stored as vectors) or type
-  in a handwriting font (Caveat), 7 pen colours, front/back choice, drag
-  placement on a flat template with rotation, bounds + overlap collision
-  checks enforced in the editor and re-validated by the store on submit.
+- Signature editor with three content modes: **draw** on a canvas pad
+  (strokes stored as vectors), **write** a name or short note, or **emoji**
+  text — typed content accepts names, notes and inline emojis and renders in
+  the signer's choice of three fonts (Caveat handwriting, Inter clean sans,
+  Archivo Black display), fitted and word-wrapped into the placed box by the
+  same layout code that paints the 3D texture. 7 pen colours, front/back
+  choice. Placement is a visible box on the flat template: drag to move,
+  corner handle to resize (never above the entitlement's size), top handle
+  or slider to tilt; the box cannot rest on another signature — invalid
+  spots turn the box red and it snaps back to the last free position on
+  release. Bounds + overlap rules are re-validated by the store on submit.
 - Signatures composite into the garment's 2048×2048 texture canvas at the
   mapped UV position and render on the 3D model; they persist in the store
   and render identically on every reload because they are stored as
@@ -83,34 +100,65 @@ current user id. Consequences, by design:
 
 ## 3D models — sourcing, licences, and honest gaps
 
-Both models are garment-only GLBs downloaded at build time from Poly Pizza:
+Both garments were replaced in the November 2026 quality pass; the original
+Poly Pizza toys (2.3k / 5.3k tris, stiff T-pose) are kept as
+`public/models/legacy-*.glb` fallbacks.
 
 | Shirt | Model | Author | Licence | Source |
 |---|---|---|---|---|
-| Classic tee | "T-shirt" | Poly by Google | CC-BY 3.0 | https://poly.pizza/m/bdOMzzh-fSl |
-| Long-sleeve | "T Shirt" | Nour | CC-BY 3.0 | https://poly.pizza/m/oZOt671DyI |
+| Classic tee | "Tshirt" | Tabbuso | CC-BY 4.0 | https://sketchfab.com/3d-models/tshirt-5a21282b2e454d1696547148f617d3d0 |
+| Button-down | "elvs_male_shirt_untucked_bd1" | Elvaerwyn | CC-BY | MakeHuman Community, shirts02 pack |
 
 Attribution is also shown in the site footer, as CC-BY requires.
 
-Adjustments made (script: `scripts/generate-uvs.mjs`, mapping in
-`lib/uv-regions.json`): neither model shipped with a usable single-texture UV
-layout (the tee had no UVs at all and wore a printed multi-material design;
-the long-sleeve's UVs overlapped front/back). The script box-projects clean
-UVs — front panel, back panel and a neutral strip — so one fabric texture
-carries all signatures, and the app's own plain-white fabric material
-replaces the tee's printed design.
+**Tee.** A Marvelous Designer cloth sim with genuinely natural drape
+(sleeves hang, soft folds). Sketchfab's download API requires an account
+(401 unauthenticated), so the file was fetched from a GitHub mirror of the
+same model — identity verified by the exact triangle count (373,280) in
+Sketchfab's own API record. Processing (gltf-transform + meshopt): decoded
+the Draco compression, deleted four decal planes the mirror repo had added
+(they are not part of the garment), decimated 373k → 63k tris, dropped
+materials (the app supplies the white fabric). ~2.0 MB GLB.
+
+**Button-down.** A real corporate shirt: modelled fold-down collar, a
+raised centre placket and a column of individual button geometry down the
+front (verified by direct vertex measurement — the button row sits at +Z,
+which also fixed the model's front direction), long sleeves with cuffs, two
+plain chest pockets. The MakeHuman source is OBJ; it was converted to GLB,
+smooth normals computed, and its dark-silk diffuse texture stripped (the app
+supplies the white fabric). 8,056 tris.
+
+**UV pipeline** (`scripts/generate-uvs.mjs`, mapping in
+`lib/uv-regions.json`): box-projects clean front/back panel UVs so one
+fabric texture carries all signatures. Three fixes landed with the new
+models: (1) UV writes are now stride-aware — interleaved attribute buffers
+(POSITION/NORMAL/TEXCOORD in one bufferView) previously got their other
+attributes smeared by the contiguous copy; (2) world normals are computed
+with a true inverse-transpose — the old cofactor shortcut applied the
+inverse rotation, which mirrors front/back assignment on any model whose
+node carries a rotation (both old models had identity transforms, so it
+never showed); (3) the button-down's front is locked to +Z from the button
+measurement, because the collar heuristic misreads its band collar.
+Panel assignment is verified programmatically after every run: front-facing
+torso vertices must land in the front panel and back-facing in the back
+panel (current models: 100% / 100%, zero mismatches).
 
 **Known gaps vs the PRD garment spec:**
-- The long-sleeve model is a plain long-sleeve crew shirt: it has **no collar
-  and no front button placket**, so it is not a true button-down. No
-  acceptable garment-only CC0/CC-BY button-down GLB was found (candidates
-  were characters wearing clothes). The 2D template draws a placket line as a
-  visual cue; the 3D garment itself remains a long-sleeve shirt. Swapping in
-  a true button-down model later only requires a new GLB + UV pass.
-- The tee is a regular-fit tee rather than strongly oversized.
-- Both models are in a T-pose (arms out), and box-projected UVs stretch
-  somewhat near the side seams; the signing area is the torso front/back,
-  which maps cleanly.
+- The button-down is body-fitted MakeHuman proportions (slim torso,
+  sleeves close to the body) at 8k tris: a genuine collared button-down,
+  but softer and less premium than a Marvelous Designer garment. The ideal
+  upgrade is identified and licence-verified — Sketchfab "Realistic Dress
+  Shirt" by MotionStudioArts (CC-BY, 139k faces, crisp point collar, 7
+  visible buttons, garment-only) — but its download sits behind a free
+  Sketchfab login (the API returns 401 without an account), so it could
+  not be fetched from this environment. Swapping it in later is: download
+  the GLB → replace `public/models/longsleeve.glb` → run
+  `scripts/generate-uvs.mjs` → re-upload to Cloudinary → update
+  `lib/uv.ts`.
+- The tee is a relaxed regular fit rather than strongly oversized.
+- The viewer lights both garments with a studio HDRI environment, ACES
+  tone mapping and a soft contact shadow, with a slow idle rotation that
+  pauses while dragging.
 
 ## Assumptions on PRD open decisions (section 15)
 
@@ -129,28 +177,38 @@ replaces the tee's printed design.
 
 ## Verification performed
 
-(localStorage refactor, 2026-11-08; the earlier server build's 38-check API
-flow test is superseded by the equivalent store-level test below.)
+(Quality pass, 2026-11-08 — supersedes the earlier server-build notes.)
 
-- `npm run build` — passes. No `/api` routes remain; every page is a static
-  shell or thin wrapper that reads the local store after mount.
-- Production server booted; all main routes return 200 (/, /login, /signup,
-  /onboarding, /dashboard + tabs, /s/adaeze-signs-out-k7x2,
-  /s/adaeze-longsleeve-m3p9, /pay/…, /sign/…). Unknown slugs/tokens render
-  their not-found state client-side after mount — with no server data layer
-  there is nothing to answer 404.
-- Store logic test (39 checks, all passing): `lib/localstore.ts` compiled
-  standalone and exercised in node behind a localStorage shim — seed on
-  first load; demo login and wrong-password rejection; pricing rejections
-  (₦1,500 gift, locked sizes); quote math (₦5,000 + 3× = ₦5,700 total,
-  ₦570 fee, ₦5,130 owner share); declined-then-successful mock payment;
-  entitlement issuance; signature placement with overlap and out-of-bounds
-  rejection; single-use enforcement; the new signature visible via the
-  public-shirt view; dashboard balance ₦21,150 → ₦26,280 after the test
-  gift; withdrawal gate while unverified; verification submission;
-  onboarding order enforcement; duplicate-shirt block; shirt-full at 60;
-  and a persistence round-trip (fresh module load over the same
-  localStorage: data, session and balances intact, no reseed).
+- `npm run build` passes; `tsc --noEmit` clean. Production server booted;
+  all 13 routes return 200 (/, /login, /signup, /onboarding, /dashboard +
+  gifts/verification/withdrawals + shirt detail, both demo shirt pages,
+  /pay/…, /sign/…). The built bundle references the new Cloudinary model
+  URLs, and both URLs return HTTP 200 with byte sizes matching the local
+  GLBs (tee 1,968,700 B; button-down 262,148 B).
+- Store logic test (30 checks, all passing): the local store compiled
+  standalone behind a localStorage shim — seed, demo login, every locked
+  pricing rule (₦1,500 rejected; ₦3,000 cannot unlock 2×; ₦5,000 + 3× =
+  ₦5,700 total / ₦570 fee / ₦5,130 owner share), decline-then-success
+  settlement, entitlement single-use, overlap and out-of-bounds rejection,
+  withdrawal gate, plus the new paths: a text signature with emojis and a
+  `display` font choice stored verbatim, box scale 0.7 stored as exactly
+  70% of the entitlement width, scale 2 clamped to the cap, legacy `type`
+  records normalised to `text`/`hand`, 60-char text sliced to 48, balance
+  accrual, persistence round-trip.
+- Texture compositor rendered headlessly (@napi-rs/canvas / Skia, real
+  Caveat + Inter + Archivo Black loaded): typed text in all three fonts
+  wraps, fits and paints into the 2048px shirt texture, including a
+  7-line wrapped note and legacy records. Emoji glyphs occupy layout
+  space correctly in the headless run but render as monochrome outlines
+  there — that Skia build has no colour-emoji font; in real browsers
+  `fillText` uses the OS colour emoji font (Apple/Noto/Segoe Emoji), which
+  is the standard canvas behaviour the app relies on.
+- 3D model panel mapping verified programmatically (see the UV pipeline
+  note above): 100% of front-facing torso vertices carry front-panel UVs
+  and 100% of back-facing carry back-panel UVs, for both new models.
 - Not verified in this environment: the WebGL canvas render itself (no
   browser binary on the VM). The viewer includes a 2D fallback if WebGL is
-  unavailable; open the app in a browser to eyeball the 3D result.
+  unavailable; open the app in a browser to eyeball the 3D result — the
+  drape of the new tee, the button-down's collar/placket under the studio
+  lighting, and colour-emoji rendering on a real device are the three
+  things to check.

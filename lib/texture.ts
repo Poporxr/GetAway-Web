@@ -3,6 +3,7 @@
 // as stroke vectors / typed text (never raster), so they render identically
 // on every device and reload.
 import { TEXTURE_SIZE, templateToPx, templatePxScale, type ShirtType } from './uv';
+import { fitTextToBox, LINE_HEIGHT } from './text';
 import type { SignatureRec } from './localstore';
 
 function fabricBase(ctx: CanvasRenderingContext2D) {
@@ -61,18 +62,21 @@ export function paintSignatures(ctx: CanvasRenderingContext2D, type: ShirtType, 
           ctx.stroke();
         }
       }
-    } else if (s.mode === 'type' && s.text) {
+    } else if ((s.mode === 'type' || s.mode === 'text') && s.text) {
+      // Typed content (names, short notes, emojis) in the signer's chosen
+      // font. fitTextToBox wraps on real glyph widths and shrinks the font
+      // until the block fits the placed box; fillText renders colour emoji
+      // natively. Legacy 'type' records carry no font and default to Caveat.
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(rad(s.rotation));
-      let fontPx = boxH * 0.94;
-      ctx.font = `600 ${fontPx}px Caveat, "Segoe Script", cursive`;
-      const w = ctx.measureText(s.text).width;
-      if (w > boxW) { fontPx *= boxW / w; ctx.font = `600 ${fontPx}px Caveat, "Segoe Script", cursive`; }
+      const { fontPx, lines } = fitTextToBox(ctx, s.text, s.font, boxW, boxH);
       ctx.fillStyle = s.color;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(s.text, 0, fontPx * 0.05);
+      const lineH = fontPx * LINE_HEIGHT;
+      const y0 = -((lines.length - 1) * lineH) / 2;
+      lines.forEach((line, i) => ctx.fillText(line, 0, y0 + i * lineH));
       ctx.restore();
     }
   }

@@ -27,7 +27,7 @@ export default function PublicShirtPage() {
         <ShirtIcon className="mx-auto text-stone-300" size={44} />
         <h1 className="mt-3 text-xl font-bold text-stone-800">Shirt not found</h1>
         <p className="mt-1 text-sm text-stone-500">This link does not match any shirt in this browser&apos;s store. Mockup data lives per device, so a link created on another device will not resolve here.</p>
-        <Link href="/" className="mt-4 inline-block rounded-full bg-violet-600 px-6 py-3 text-sm font-bold text-white">Go home</Link>
+        <Link href="/" className="btn-primary mt-4">Go home</Link>
       </div>
     );
   }
@@ -39,37 +39,37 @@ export default function PublicShirtPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16">
       <div className="pt-8 text-center">
-        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 font-hand text-3xl font-bold text-white shadow-sm">
+        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-stone-900 font-hand text-3xl font-bold text-white">
           {firstName.charAt(0)}
         </span>
-        <h1 className="mt-3 text-3xl font-extrabold text-stone-900">{owner.name}&apos;s signing-out shirt</h1>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-stone-900">{owner.name}&apos;s signing-out shirt</h1>
         <p className="mt-1 flex flex-wrap items-center justify-center gap-x-2 text-sm text-stone-500">
           <GraduationCap size={15} /> {owner.department} · {owner.school}
         </p>
-        <p className="mt-2 text-sm font-semibold text-violet-700">
-          {signatures.length} signatures so far · {gifts.length} gifts · {shirt.type === 'tee' ? 'Classic Tee' : 'Long-Sleeve Shirt'}
+        <p className="mt-2 text-sm font-semibold text-emerald-700">
+          {signatures.length} signatures so far · {gifts.length} gifts · {shirt.type === 'tee' ? 'Classic Tee' : 'Button-Down Shirt'}
         </p>
       </div>
 
       <div className="mt-6 grid items-start gap-5 lg:grid-cols-5">
-        <div className="overflow-hidden rounded-[2rem] bg-gradient-to-b from-violet-100 via-paper to-amber-100 ring-1 ring-stone-200/70 lg:col-span-3">
+        <div className="card overflow-hidden lg:col-span-3"><div className="bg-[#f4f4f2]">
           <ShirtViewer type={shirt.type} signatures={signatures} height={470} />
-          <p className="pb-4 text-center text-xs text-stone-400">Drag to spin · use Front / Back to flip · scroll or pinch to zoom</p>
-        </div>
+          <p className="border-t border-stone-100 bg-white py-3 text-center text-xs text-stone-400">Drag to spin · use Front / Back to flip · scroll or pinch to zoom</p>
+        </div></div>
 
         <div className="space-y-4 lg:col-span-2">
           {full ? (
-            <div className="rounded-3xl bg-white p-6 text-center shadow-sm ring-1 ring-stone-200/70">
-              <ShirtIcon className="mx-auto text-violet-500" size={36} />
-              <h2 className="mt-2 font-extrabold text-stone-900">This shirt is full! 🎉</h2>
+            <div className="card p-6 text-center">
+              <ShirtIcon className="mx-auto text-emerald-700" size={36} />
+              <h2 className="mt-2 font-semibold tracking-tight text-stone-900">This shirt is full</h2>
               <p className="mt-1 text-sm text-stone-500">Every space has been signed. {firstName} is one loved graduate.</p>
             </div>
           ) : (
             <GiftForm slug={shirt.slug} ownerFirstName={firstName} />
           )}
 
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200/70">
-            <h3 className="flex items-center gap-2 font-bold text-stone-900"><PenLine size={16} className="text-violet-600" /> Fresh ink</h3>
+          <div className="card p-5">
+            <h3 className="flex items-center gap-2 font-semibold tracking-tight text-stone-900"><PenLine size={16} className="text-emerald-700" /> Fresh ink</h3>
             {signatures.length === 0 ? (
               <p className="mt-2 text-sm text-stone-400">No signatures yet — yours could be the first.</p>
             ) : (
@@ -87,8 +87,8 @@ export default function PublicShirtPage() {
             )}
           </div>
 
-          <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-stone-200/70">
-            <h3 className="font-bold text-stone-900">Recent gifts</h3>
+          <div className="card p-5">
+            <h3 className="font-semibold tracking-tight text-stone-900">Recent gifts</h3>
             {gifts.length === 0 ? (
               <p className="mt-2 text-sm text-stone-400">No gifts yet.</p>
             ) : (

@@ -66,7 +66,7 @@ export default function SignaturePad({
 
   return (
     <div>
-      <div className="overflow-hidden rounded-2xl border-2 border-dashed border-stone-300 bg-[linear-gradient(#fff,#fff)]">
+      <div className="overflow-hidden rounded-xl border border-dashed border-stone-300">
         <canvas
           ref={canvasRef}
           width={W} height={H}

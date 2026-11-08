@@ -41,7 +41,7 @@ export function CreateShirtButton({ type, label, onCreated }: { type: 'tee' | 'l
           setBusy(false);
           if (onCreated) onCreated();
         }}
-        className="flex items-center gap-2 rounded-full bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50"
+        className="btn-primary"
       >
         {busy ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />} {label}
       </button>
@@ -50,8 +50,8 @@ export function CreateShirtButton({ type, label, onCreated }: { type: 'tee' | 'l
   );
 }
 
-const inputCls = 'mt-1 w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100';
-const labelCls = 'text-xs font-bold uppercase tracking-wide text-stone-500';
+const inputCls = 'input mt-1.5';
+const labelCls = 'label';
 
 export function VerificationForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const router = useRouter();
@@ -89,11 +89,11 @@ export function VerificationForm({ onSubmitted }: { onSubmitted?: () => void }) 
       </div>
       <div>
         <label className={labelCls}>Evidence file</label>
-        <input type="file" accept="image/*,.pdf" onChange={(e) => setEvidenceName(e.target.files?.[0]?.name ?? '')} className="mt-1 block w-full text-sm text-stone-500 file:mr-3 file:rounded-full file:border-0 file:bg-violet-100 file:px-4 file:py-2 file:text-sm file:font-bold file:text-violet-700" />
+        <input type="file" accept="image/*,.pdf" onChange={(e) => setEvidenceName(e.target.files?.[0]?.name ?? '')} className="mt-1 block w-full text-sm text-stone-500 file:mr-3 file:rounded-full file:border-0 file:bg-stone-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-stone-700" />
         <p className="mt-1 text-xs text-stone-400">Prototype: the file name is recorded; the file itself is not uploaded or stored.</p>
       </div>
-      {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error}</p>}
-      <button disabled={busy} className="flex w-full items-center justify-center gap-2 rounded-full bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50">
+      {error && <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700">{error}</p>}
+      <button disabled={busy} className="btn-primary w-full">
         {busy && <Loader2 className="animate-spin" size={16} />} Submit for review
       </button>
     </form>
@@ -127,9 +127,9 @@ export function WithdrawForm({ availableKobo, bankLine, onDone }: { availableKob
         <input value={amount} onChange={(e) => setAmount(e.target.value)} type="number" min={100} step={50} required placeholder="e.g. 5000" className={inputCls} />
       </div>
       <p className="text-xs text-stone-400">Payout goes to {bankLine}. Minimum ₦100.</p>
-      {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error}</p>}
-      {done && <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">{done}</p>}
-      <button disabled={busy || availableKobo <= 0} className="flex w-full items-center justify-center gap-2 rounded-full bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-40">
+      {error && <p className="rounded-xl bg-red-50 px-3.5 py-2.5 text-sm font-medium text-red-700">{error}</p>}
+      {done && <p className="rounded-xl bg-emerald-50 px-3.5 py-2.5 text-sm font-medium text-emerald-700">{done}</p>}
+      <button disabled={busy || availableKobo <= 0} className="btn-primary w-full">
         {busy && <Loader2 className="animate-spin" size={16} />} Request withdrawal
       </button>
     </form>

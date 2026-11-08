@@ -55,7 +55,7 @@ export const PEN_COLORS = [
   { name: 'Ballpoint Blue', value: '#1e40d8' },
   { name: 'Crimson', value: '#d81f3e' },
   { name: 'Emerald', value: '#0d9e57' },
-  { name: 'Royal Purple', value: '#7c3aed' },
+  { name: 'Teal', value: '#0f766e' },
   { name: 'Sunset Orange', value: '#ea580c' },
   { name: 'Gold', value: '#b45309' },
 ];

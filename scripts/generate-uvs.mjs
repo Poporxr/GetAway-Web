@@ -47,13 +47,27 @@ function nodeMatrix(node) {
   return Float32Array.from([(1 - (yy + zz)) * s[0], (xy + wz) * s[0], (xz - wy) * s[0], 0, (xy - wz) * s[1], (1 - (xx + zz)) * s[1], (yz + wx) * s[1], 0, (xz + wy) * s[2], (yz - wx) * s[2], (1 - (xx + yy)) * s[2], 0, t[0], t[1], t[2], 1]);
 }
 const applyMat = (m, v) => [m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12], m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13], m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14]];
-function applyMatDir(m, v) {
-  const [a, b, c, d, e, f, g, h, i] = [m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]];
-  const n = [(e * i - f * h) * v[0] - (d * i - f * g) * v[1] + (d * h - e * g) * v[2], -(b * i - c * h) * v[0] + (a * i - c * g) * v[1] - (a * h - b * g) * v[2], (b * f - c * e) * v[0] - (a * f - c * d) * v[1] + (a * e - b * d) * v[2]];
-  const l = Math.hypot(...n) || 1; return [n[0] / l, n[1] / l, n[2] / l];
+// World normal transform: transpose(inverse(upper 3x3)) of the world matrix.
+// (The previous cofactor shortcut applied the INVERSE rotation to normals,
+// which silently mirrored front/back panel assignment on any model whose
+// node carries a rotation — e.g. Z-up exports. Positions were unaffected.)
+function makeNormalFn(m) {
+  const a = m[0], b = m[4], c = m[8], d = m[1], e = m[5], f = m[9], g = m[2], h = m[6], i = m[10];
+  const det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g) || 1;
+  const r0 = [(e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det];
+  const r1 = [(f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det];
+  const r2 = [(d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det];
+  return (v) => {
+    const n = [
+      r0[0] * v[0] + r1[0] * v[1] + r2[0] * v[2],
+      r0[1] * v[0] + r1[1] * v[1] + r2[1] * v[2],
+      r0[2] * v[0] + r1[2] * v[1] + r2[2] * v[2],
+    ];
+    const l = Math.hypot(...n) || 1; return [n[0] / l, n[1] / l, n[2] / l];
+  };
 }
 
-function process(file) {
+function process(file, frontOverride) {
   const { json: gltf, bin } = parseGLB(file);
   // gather world-space verts per primitive
   const prims = [];
@@ -67,9 +81,10 @@ function process(file) {
         const nor = accessorArray(gltf, bin, prim.attributes.NORMAL);
         const count = pos.length / 3;
         const P = new Float32Array(pos), N = new Float32Array(nor);
+        const nfn = makeNormalFn(world);
         for (let i = 0; i < count; i++) {
           const p = applyMat(world, [pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]]);
-          const n = applyMatDir(world, [nor[i * 3], nor[i * 3 + 1], nor[i * 3 + 2]]);
+          const n = nfn([nor[i * 3], nor[i * 3 + 1], nor[i * 3 + 2]]);
           P.set(p, i * 3); N.set(n, i * 3);
         }
         prims.push({ prim, P, N, count, uvAccessor: prim.attributes.TEXCOORD_0 });
@@ -96,7 +111,7 @@ function process(file) {
     }
     return m;
   };
-  const frontIsPlusZ = neckLowest(true) <= neckLowest(false);
+  const frontIsPlusZ = frontOverride !== undefined ? frontOverride : neckLowest(true) <= neckLowest(false);
 
   // torso half-extent below the armpits (y band 28%..52% of height)
   let torsoHalf = 0;
@@ -139,11 +154,19 @@ function process(file) {
       uv[i * 2] = u; uv[i * 2 + 1] = v;
     }
     if (pr.uvAccessor !== undefined) {
-      // overwrite existing TEXCOORD_0 data in place inside a copied BIN
+      // overwrite existing TEXCOORD_0 data in place inside a copied BIN,
+      // respecting interleaved buffer layouts (byteStride): some exporters
+      // pack POSITION/NORMAL/TEXCOORD into one strided bufferView, and a
+      // contiguous copy would smear UV floats over the other attributes.
       const acc = gltf.accessors[pr.uvAccessor];
       const view = gltf.bufferViews[acc.bufferView];
       const off = (view.byteOffset || 0) + (acc.byteOffset || 0);
-      Buffer.from(uv.buffer).copy(bin, off);
+      const uvBuf = Buffer.from(uv.buffer, uv.byteOffset, uv.byteLength);
+      if (view.byteStride && view.byteStride !== 8) {
+        for (let i = 0; i < pr.count; i++) uvBuf.copy(bin, off + i * view.byteStride, i * 8, i * 8 + 8);
+      } else {
+        uvBuf.copy(bin, off);
+      }
       pr.done = true;
     } else {
       newBuffers.push({ prim: pr.prim, uv });
@@ -188,7 +211,10 @@ function process(file) {
 
 const cfg = {
   tee: process(path.resolve('public/models/tee.glb')),
-  longsleeve: process(path.resolve('public/models/longsleeve.glb')),
+  // Button-down (MakeHuman export): the collar-band heuristic misreads this
+  // mesh; the button column was measured directly and sits at +Z, so the
+  // front is +Z. Override locked in.
+  longsleeve: process(path.resolve('public/models/longsleeve.glb'), true),
 };
 fs.writeFileSync('lib/uv-regions.json', JSON.stringify(cfg, null, 2));
 console.log(JSON.stringify(cfg, null, 2));

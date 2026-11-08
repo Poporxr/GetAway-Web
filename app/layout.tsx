@@ -12,21 +12,21 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen flex-col bg-paper font-sans">
+      <body className="flex min-h-screen flex-col bg-paper font-sans text-stone-900 antialiased">
         <TestModeBanner />
-        <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-paper/90 backdrop-blur">
+        <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-paper/85 backdrop-blur-md">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <Link href="/" aria-label="SignOut home"><Logo /></Link>
             <HeaderNav />
           </div>
         </header>
         <main className="flex-1">{children}</main>
-        <footer className="border-t border-stone-200/70 py-6">
+        <footer className="border-t border-stone-200/80 py-8">
           <div className="mx-auto max-w-6xl px-4 text-center text-xs leading-relaxed text-stone-400">
-            <p className="font-semibold text-stone-500">SignOut — sign the shirt, from anywhere. 🎓</p>
+            <p className="font-semibold text-stone-500">SignOut — sign the shirt, from anywhere.</p>
             <p className="mt-1">
-              3D models: “T-shirt” by Poly by Google and “T Shirt” by Nour, both CC-BY 3.0 via Poly Pizza.
-              Prototype build — payments are mocked in test mode.
+              3D models: “Tshirt” by Tabbuso (CC-BY 4.0, via Sketchfab) and “elvs_male_shirt_untucked_bd1”
+              by Elvaerwyn (CC-BY, via MakeHuman Community). Prototype build — payments are mocked in test mode.
             </p>
           </div>
         </footer>

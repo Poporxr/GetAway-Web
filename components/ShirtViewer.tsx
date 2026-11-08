@@ -8,7 +8,7 @@ import type { SignatureRec } from '@/lib/localstore';
 import ShirtTemplate from './ShirtTemplate';
 
 export default function ShirtViewer({
-  type, signatures, height = 380, autoRotate = false,
+  type, signatures, height = 380, autoRotate = true,
 }: {
   type: ShirtType;
   signatures: SignatureRec[];
@@ -33,6 +33,7 @@ export default function ShirtViewer({
         const THREE = await import('three');
         const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
         const { OrbitControls } = await import('three/addons/controls/OrbitControls.js');
+        const { RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js');
         if (disposed || !mountRef.current) return;
 
         const mount = mountRef.current;
@@ -40,24 +41,48 @@ export default function ShirtViewer({
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.setSize(mount.clientWidth, mount.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.02;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         mount.appendChild(renderer.domElement);
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(34, mount.clientWidth / mount.clientHeight, 0.1, 100);
-        scene.add(new THREE.HemisphereLight(0xffffff, 0xcfc4ae, 1.15));
-        const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(2.5, 3.5, 4); scene.add(key);
-        const rim = new THREE.DirectionalLight(0xdde4ff, 0.9); rim.position.set(-3, 2, -3.5); scene.add(rim);
+        // soft studio reflections so the fabric shades like a product shot
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environmentIntensity = 0.5;
+
+        const camera = new THREE.PerspectiveCamera(33, mount.clientWidth / mount.clientHeight, 0.1, 100);
+        scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d3c8, 0.85));
+        const key = new THREE.DirectionalLight(0xffffff, 1.6);
+        key.position.set(2.5, 3.5, 4);
+        key.castShadow = true;
+        key.shadow.mapSize.set(1024, 1024);
+        key.shadow.camera.left = -2; key.shadow.camera.right = 2;
+        key.shadow.camera.top = 2; key.shadow.camera.bottom = -2;
+        key.shadow.bias = -0.0004;
+        scene.add(key);
+        const rim = new THREE.DirectionalLight(0xf2f0eb, 0.7); rim.position.set(-3, 2, -3.5); scene.add(rim);
         const ground = new THREE.Mesh(
-          new THREE.CircleGeometry(1.5, 40),
-          new THREE.ShadowMaterial({ opacity: 0.12 }),
+          new THREE.CircleGeometry(1.6, 40),
+          new THREE.ShadowMaterial({ opacity: 0.14 }),
         );
-        ground.rotation.x = -Math.PI / 2; ground.position.y = -1.24; scene.add(ground);
+        ground.rotation.x = -Math.PI / 2; ground.position.y = -1.16;
+        ground.receiveShadow = true;
+        scene.add(ground);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.enablePan = false;
         controls.autoRotate = autoRotate;
-        controls.autoRotateSpeed = 1.4;
+        controls.autoRotateSpeed = 0.9; // slow idle spin; pauses while dragging
+        let idleTimer: ReturnType<typeof setTimeout> | undefined;
+        controls.addEventListener('start', () => { controls.autoRotate = false; if (idleTimer) clearTimeout(idleTimer); });
+        controls.addEventListener('end', () => {
+          if (!autoRotate) return;
+          idleTimer = setTimeout(() => { controls.autoRotate = true; }, 3500);
+        });
 
         const canvas = buildTextureCanvas(type, signatures);
         canvasRef.current = canvas;
@@ -73,8 +98,8 @@ export default function ShirtViewer({
         const gltf = await new GLTFLoader().loadAsync(MODELS[type].file);
         if (disposed) return;
         const model = gltf.scene;
-        const fabric = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.92, metalness: 0, side: THREE.DoubleSide });
-        model.traverse((o: any) => { if (o.isMesh) { o.material = fabric; o.castShadow = false; o.receiveShadow = false; } });
+        const fabric = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.94, metalness: 0, side: THREE.DoubleSide });
+        model.traverse((o: any) => { if (o.isMesh) { o.material = fabric; o.castShadow = true; o.receiveShadow = false; } });
 
         const box = new THREE.Box3().setFromObject(model);
         const size = box.getSize(new THREE.Vector3());
@@ -123,6 +148,7 @@ export default function ShirtViewer({
         setStatus('ready');
         cleanup = () => {
           cancelAnimationFrame(raf);
+          if (idleTimer) clearTimeout(idleTimer);
           ro.disconnect();
           controls.dispose();
           renderer.dispose();
@@ -173,7 +199,7 @@ export default function ShirtViewer({
           <button
             key={f}
             onClick={() => flip(f)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition ${face === f ? 'bg-violet-600 text-white' : 'text-stone-600 hover:bg-stone-100'}`}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition ${face === f ? 'bg-stone-900 text-white' : 'text-stone-600 hover:bg-stone-100'}`}
           >
             {f}
           </button>

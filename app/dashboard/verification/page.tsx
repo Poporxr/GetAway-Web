@@ -16,13 +16,13 @@ export default function VerificationPage() {
 
   return (
     <div className="mx-auto max-w-xl">
-      <h2 className="text-lg font-extrabold text-stone-900">Student verification</h2>
+      <h2 className="text-lg font-semibold tracking-tight text-stone-900">Student verification</h2>
       <p className="text-sm text-stone-500">Withdrawals unlock once your student status is verified. This protects gift money from fake accounts.</p>
 
-      <div className="mt-4 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-stone-200/70">
+      <div className="card mt-4 p-6">
         {v.status === 'verified' ? (
           <div className="text-center">
-            <ShieldCheck className="mx-auto text-emerald-500" size={44} />
+            <ShieldCheck className="mx-auto text-emerald-600" size={44} />
             <p className="mt-2 font-bold text-stone-900">You&apos;re verified</p>
             <p className="text-sm text-stone-500">Withdrawals are open on the Withdrawals tab.</p>
           </div>
@@ -39,8 +39,8 @@ export default function VerificationPage() {
           </div>
         ) : (
           <>
-            <div className="mb-4 flex items-start gap-2 rounded-2xl bg-stone-50 p-3 text-sm text-stone-600">
-              <ShieldAlert size={17} className="mt-0.5 shrink-0 text-violet-600" />
+            <div className="mb-4 flex items-start gap-2 rounded-xl bg-stone-50 p-3.5 text-sm text-stone-600 ring-1 ring-stone-200/70">
+              <ShieldAlert size={17} className="mt-0.5 shrink-0 text-emerald-700" />
               <span>Current status: <strong>not submitted</strong>. Submit your student ID details below to enter the review queue.</span>
             </div>
             <VerificationForm onSubmitted={refresh} />
@@ -48,7 +48,7 @@ export default function VerificationPage() {
         )}
       </div>
 
-      <div className="mt-4 flex items-start gap-2 rounded-3xl bg-violet-50 p-4 text-sm text-violet-900 ring-1 ring-violet-100">
+      <div className="mt-4 flex items-start gap-2 rounded-2xl bg-stone-50 p-4 text-sm text-stone-600 ring-1 ring-stone-200">
         <BadgeCheck size={17} className="mt-0.5 shrink-0" />
         <span>Your account: {profile?.school} · {profile?.department}. Payout bank: {profile?.bankName} — {profile?.accountNumber} ({profile?.accountName}).</span>
       </div>

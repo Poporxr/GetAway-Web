@@ -9,10 +9,17 @@ export const MAX_SIGNATURES_PER_SHIRT = 60;
 
 export interface Box { x: number; y: number; w: number; h: number }
 
-export function signatureBox(type: ShirtType, surface: Surface, size: number, aspect: number, cx: number, cy: number): Box {
-  const w = SIZE_WIDTH[size] ?? SIZE_WIDTH[1];
-  const scale = templatePxScale(type, surface); // px per template unit
-  const h = (w * scale.x) / (Math.max(0.8, Math.min(6, aspect)) * scale.y);
+/**
+ * Footprint of a signature. `scale` (0.4–1, default 1) lets the signer shrink
+ * the box below the entitlement's full width; the entitlement size is always
+ * the cap, never exceeded. Aspect is clamped to 0.5–6 (multi-line text
+ * messages legitimately run taller than a drawn scrawl).
+ */
+export function signatureBox(type: ShirtType, surface: Surface, size: number, aspect: number, cx: number, cy: number, scale = 1): Box {
+  const s = Math.max(0.4, Math.min(1, scale || 1));
+  const w = (SIZE_WIDTH[size] ?? SIZE_WIDTH[1]) * s;
+  const px = templatePxScale(type, surface); // px per template unit
+  const h = (w * px.x) / (Math.max(0.5, Math.min(6, aspect)) * px.y);
   return { x: cx, y: cy, w, h };
 }
 
