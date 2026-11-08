@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Gift, Loader2, Lock, Sparkles } from 'lucide-react';
 import { fmt, quote, allowedSizes, MIN_GIFT_KOBO, SIZE_UNLOCK_KOBO } from '@/lib/money';
+import { createCheckout } from '@/lib/localstore';
 
 const CHIPS = [2000, 5000, 10000, 20000, 50000];
 
@@ -27,18 +28,14 @@ export default function GiftForm({ slug, ownerFirstName }: { slug: string; owner
     if (!name.trim()) { setError('Please enter your name — it appears in the gift list.'); return; }
     if (!q.ok) { setError(q.error!); return; }
     setBusy(true);
-    try {
-      const res = await fetch('/api/checkout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, contributorName: name.trim(), contributorEmail: email.trim(), giftNaira: gift, size: effectiveSize }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || 'Checkout failed. Please try again.');
-      router.push(`/pay/${j.reference}`);
-    } catch (err: any) {
-      setError(err.message);
+    // Mockup: checkout is quoted and created in the local store.
+    const result = createCheckout({ slug, contributorName: name.trim(), contributorEmail: email.trim(), giftNaira: gift, size: effectiveSize });
+    if (!result.ok) {
+      setError(result.error || 'Checkout failed. Please try again.');
       setBusy(false);
+      return;
     }
+    router.push(`/pay/${result.reference}`);
   };
 
   return (

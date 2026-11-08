@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
+import { login, signup } from '@/lib/localstore';
 
 export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const router = useRouter();
@@ -16,19 +17,14 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true); setError(null);
-    try {
-      const res = await fetch(`/api/auth/${mode}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mode === 'signup' ? { name, email, password } : { email, password }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || 'Something went wrong.');
-      router.push(j.onboarded ? '/dashboard' : '/onboarding');
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message);
+    // Mockup auth: accounts live in this browser's localStorage store.
+    const result = mode === 'signup' ? signup({ name, email, password }) : login({ email, password });
+    if (!result.ok) {
+      setError(result.error || 'Something went wrong.');
       setBusy(false);
+      return;
     }
+    router.push(result.onboarded ? '/dashboard' : '/onboarding');
   };
 
   return (

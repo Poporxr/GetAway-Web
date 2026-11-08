@@ -1,19 +1,22 @@
+'use client';
+
 import Link from 'next/link';
 import { Lock, Wallet } from 'lucide-react';
-import { requireUser } from '@/lib/auth';
-import { loadDB, ownerBalance } from '@/lib/store';
+import { useClientDB } from '@/lib/hooks';
+import { getSessionUserId, ownerBalance } from '@/lib/localstore';
 import { fmt } from '@/lib/money';
+import { LoadingBlock } from '@/components/ui';
 import { WithdrawForm } from '@/components/DashboardWidgets';
 
-export const dynamic = 'force-dynamic';
+export default function WithdrawalsPage() {
+  const { ready, db, refresh } = useClientDB();
+  const userId = ready ? getSessionUserId() : null;
+  if (!ready || !db || !userId) return <LoadingBlock />;
 
-export default async function WithdrawalsPage() {
-  const user = await requireUser();
-  const db = loadDB();
-  const profile = db.profiles.find((p) => p.userId === user.id);
-  const balance = ownerBalance(db, user.id);
+  const profile = db.profiles.find((p) => p.userId === userId);
+  const balance = ownerBalance(db, userId);
   const withdrawals = db.withdrawals
-    .filter((w) => w.ownerId === user.id)
+    .filter((w) => w.ownerId === userId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const verified = profile?.verification.status === 'verified';
 
@@ -50,7 +53,7 @@ export default async function WithdrawalsPage() {
               <p className="mt-3 text-xs text-stone-400">Prototype note: review is simulated, so approval never lands in this build — the gate itself is fully functional.</p>
             </div>
           ) : (
-            <WithdrawForm availableKobo={balance.availableKobo} bankLine={`${profile?.bankName} · ${profile?.accountNumber}`} />
+            <WithdrawForm availableKobo={balance.availableKobo} bankLine={`${profile?.bankName} · ${profile?.accountNumber}`} onDone={refresh} />
           )}
         </div>
       </div>

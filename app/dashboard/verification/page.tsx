@@ -1,14 +1,17 @@
+'use client';
+
 import { BadgeCheck, Clock, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { requireUser } from '@/lib/auth';
-import { loadDB } from '@/lib/store';
+import { useClientDB } from '@/lib/hooks';
+import { getSessionUserId } from '@/lib/localstore';
+import { LoadingBlock } from '@/components/ui';
 import { VerificationForm } from '@/components/DashboardWidgets';
 
-export const dynamic = 'force-dynamic';
+export default function VerificationPage() {
+  const { ready, db, refresh } = useClientDB();
+  const userId = ready ? getSessionUserId() : null;
+  if (!ready || !db || !userId) return <LoadingBlock />;
 
-export default async function VerificationPage() {
-  const user = await requireUser();
-  const db = loadDB();
-  const profile = db.profiles.find((p) => p.userId === user.id);
+  const profile = db.profiles.find((p) => p.userId === userId);
   const v = profile?.verification ?? { status: 'not_submitted' as const };
 
   return (
@@ -40,7 +43,7 @@ export default async function VerificationPage() {
               <ShieldAlert size={17} className="mt-0.5 shrink-0 text-violet-600" />
               <span>Current status: <strong>not submitted</strong>. Submit your student ID details below to enter the review queue.</span>
             </div>
-            <VerificationForm />
+            <VerificationForm onSubmitted={refresh} />
           </>
         )}
       </div>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Clock, Loader2, PenLine, Type, XCircle } from 'lucide-react';
-import type { SignatureRec, Stroke } from '@/lib/store';
+import { getEntitlementView, submitSignature, type SignatureRec, type Stroke } from '@/lib/localstore';
 import { PEN_COLORS } from '@/lib/lists';
 import { signatureBox, withinBounds, findCollision } from '@/lib/signatures';
 import type { Surface } from '@/lib/uv';
@@ -41,13 +41,10 @@ export default function SignFlow({ token }: { token: string }) {
   const dragging = useRef(false);
 
   useEffect(() => {
-    fetch(`/api/entitlements/${token}`)
-      .then(async (r) => {
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error || 'This signing link is not valid.');
-        setData(j);
-      })
-      .catch((e) => setError(e.message));
+    // Mockup: the signing pass lives in this browser's local store.
+    const result = getEntitlementView(token);
+    if (!result.ok) { setError(result.error || 'This signing link is not valid.'); return; }
+    setData(result.view);
   }, [token]);
 
   const typeAspect = useMemo(() => {
@@ -85,25 +82,21 @@ export default function SignFlow({ token }: { token: string }) {
   const submit = async () => {
     if (!data || !asset || !box || collision) return;
     setSubmitting(true); setSubmitError(null);
-    try {
-      const res = await fetch('/api/signatures', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token, surface, x: center.x, y: center.y, rotation,
-          mode: asset.mode, color: asset.color, aspect: asset.aspect,
-          strokes: asset.strokes, text: asset.text,
-        }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || 'Could not save your signature.');
-      setPlaced(j.signature);
-      setData({ ...data, signatures: [...data.signatures, j.signature] });
-      setStep('done');
-    } catch (e: any) {
-      setSubmitError(e.message);
-    } finally {
+    // Mockup: entitlement consumption + signature validation run in the local store.
+    const result = submitSignature(token, {
+      surface, x: center.x, y: center.y, rotation,
+      mode: asset.mode, color: asset.color, aspect: asset.aspect,
+      strokes: asset.strokes, text: asset.text,
+    });
+    if (!result.ok) {
+      setSubmitError(result.error || 'Could not save your signature.');
       setSubmitting(false);
+      return;
     }
+    setPlaced(result.signature);
+    setData({ ...data, signatures: [...data.signatures, result.signature] });
+    setStep('done');
+    setSubmitting(false);
   };
 
   if (error) {

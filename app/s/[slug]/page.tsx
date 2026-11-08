@@ -1,26 +1,39 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { GraduationCap, PenLine, Shirt as ShirtIcon } from 'lucide-react';
-import { loadDB } from '@/lib/store';
+import { useClientDB } from '@/lib/hooks';
+import { getPublicShirt } from '@/lib/localstore';
 import { fmt } from '@/lib/money';
-import { MAX_SIGNATURES_PER_SHIRT } from '@/lib/signatures';
 import ShirtViewer from '@/components/ShirtViewer';
 import GiftForm from '@/components/GiftForm';
+import { LoadingBlock } from '@/components/ui';
 
-export const dynamic = 'force-dynamic';
+export default function PublicShirtPage() {
+  const params = useParams();
+  const slug = String(params.slug ?? '');
+  const { ready } = useClientDB();
+  if (!ready) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 pb-16"><LoadingBlock label="Loading the shirt…" /></div>
+    );
+  }
 
-export default async function PublicShirtPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const db = loadDB();
-  const shirt = db.shirts.find((s) => s.slug === slug);
-  if (!shirt) notFound();
-  const owner = db.users.find((u) => u.id === shirt.ownerId);
-  const profile = db.profiles.find((p) => p.userId === shirt.ownerId);
-  const signatures = db.signatures.filter((s) => s.shirtId === shirt.id);
-  const gifts = db.payments
-    .filter((p) => p.shirtId === shirt.id && p.status === 'success')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const full = signatures.length >= MAX_SIGNATURES_PER_SHIRT;
-  const firstName = (owner?.name ?? 'A graduate').split(' ')[0];
+  const result = getPublicShirt(slug);
+  if (!result.ok) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <ShirtIcon className="mx-auto text-stone-300" size={44} />
+        <h1 className="mt-3 text-xl font-bold text-stone-800">Shirt not found</h1>
+        <p className="mt-1 text-sm text-stone-500">This link does not match any shirt in this browser&apos;s store. Mockup data lives per device, so a link created on another device will not resolve here.</p>
+        <Link href="/" className="mt-4 inline-block rounded-full bg-violet-600 px-6 py-3 text-sm font-bold text-white">Go home</Link>
+      </div>
+    );
+  }
+
+  const { shirt, owner, signatures, gifts, full } = result.view;
+  const firstName = owner.name.split(' ')[0];
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
 
   return (
@@ -29,9 +42,9 @@ export default async function PublicShirtPage({ params }: { params: Promise<{ sl
         <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 font-hand text-3xl font-bold text-white shadow-sm">
           {firstName.charAt(0)}
         </span>
-        <h1 className="mt-3 text-3xl font-extrabold text-stone-900">{owner?.name}&apos;s signing-out shirt</h1>
+        <h1 className="mt-3 text-3xl font-extrabold text-stone-900">{owner.name}&apos;s signing-out shirt</h1>
         <p className="mt-1 flex flex-wrap items-center justify-center gap-x-2 text-sm text-stone-500">
-          <GraduationCap size={15} /> {profile?.department} · {profile?.school}
+          <GraduationCap size={15} /> {owner.department} · {owner.school}
         </p>
         <p className="mt-2 text-sm font-semibold text-violet-700">
           {signatures.length} signatures so far · {gifts.length} gifts · {shirt.type === 'tee' ? 'Classic Tee' : 'Long-Sleeve Shirt'}

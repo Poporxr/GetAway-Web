@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2, RotateCcw, RefreshCw } from 'lucide-react';
 import { cfg, MODELS, type ShirtType, type Surface } from '@/lib/uv';
 import { buildTextureCanvas, paintSignatures } from '@/lib/texture';
-import type { SignatureRec } from '@/lib/store';
+import type { SignatureRec } from '@/lib/localstore';
 import ShirtTemplate from './ShirtTemplate';
 
 export default function ShirtViewer({

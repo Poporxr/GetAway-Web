@@ -1,8 +1,8 @@
 import type { Surface } from './uv';
 import { templatePxScale, type ShirtType } from './uv';
 
-// Signature footprint, shared by the editor (client) and the API (server) so
-// bounds + collision validation can never drift apart.
+// Signature footprint, shared by the editor UI and the local store's
+// validation so bounds + collision checks can never drift apart.
 // Width is a fraction of the signing-region width, by entitlement size.
 export const SIZE_WIDTH: Record<number, number> = { 1: 0.36, 2: 0.5, 3: 0.62, 4: 0.76 };
 export const MAX_SIGNATURES_PER_SHIRT = 60;

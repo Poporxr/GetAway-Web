@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, CreditCard, Loader2, Lock, ShieldCheck, XCircle } from 'lucide-react';
 import { fmt } from '@/lib/money';
+import { confirmPayment, getPaymentView } from '@/lib/localstore';
 
 interface PaymentView {
   reference: string; contributorName: string; giftKobo: number; surchargeKobo: number;
@@ -24,9 +25,10 @@ export default function PayClient({ reference }: { reference: string }) {
   const [failMsg, setFailMsg] = useState<string | null>(null);
 
   const load = () => {
-    fetch(`/api/payments/${reference}`)
-      .then(async (r) => { const j = await r.json(); if (!r.ok) throw new Error(j.error); setPay(j); })
-      .catch((e) => setLoadError(e.message));
+    // Mockup: the payment lives in this browser's local store.
+    const result = getPaymentView(reference);
+    if (!result.ok) { setLoadError(result.error); return; }
+    setPay(result.view);
   };
   useEffect(load, [reference]);
 
@@ -34,18 +36,14 @@ export default function PayClient({ reference }: { reference: string }) {
     setBusy(true); setFailMsg(null);
     await new Promise((r) => setTimeout(r, 900)); // simulate gateway processing
     const succeed = !forceFail && card.replace(/\s/g, '') === TEST_CARD.replace(/\s/g, '');
-    const res = await fetch(`/api/payments/${reference}/confirm`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ outcome: succeed ? 'success' : 'failure' }),
-    });
-    const j = await res.json();
+    const result = confirmPayment(reference, succeed ? 'success' : 'failure');
     setBusy(false);
     if (!succeed) {
       setFailMsg('Declined by the mock bank. Use the test card number below to simulate a successful payment.');
       load();
       return;
     }
-    if (!res.ok) { setFailMsg(j.error || 'Payment failed.'); return; }
+    if (!result.ok) { setFailMsg(result.error || 'Payment failed.'); return; }
     load();
   };
 

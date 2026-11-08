@@ -1,5 +1,6 @@
 // All money is integer kobo (₦1 = 100 kobo). Pricing rules live here and are
-// enforced server-side only; the UI merely displays what the server quotes.
+// enforced by the local store (lib/localstore.ts); the UI merely displays
+// what the store quotes.
 export const MIN_GIFT_KOBO = 200_000; // ₦2,000
 export const SIZE_UNLOCK_KOBO = 500_000; // gift of ₦5,000+ (before surcharge) unlocks 2x-4x
 export const SIZE_SURCHARGE_KOBO: Record<number, number> = {

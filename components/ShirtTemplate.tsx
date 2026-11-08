@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ShirtType, Surface } from '@/lib/uv';
-import type { SignatureRec } from '@/lib/store';
+import type { SignatureRec } from '@/lib/localstore';
 import SignaturePreview from './SignaturePreview';
 
 const SILHOUETTES: Record<ShirtType, string> = {

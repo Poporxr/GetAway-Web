@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Eraser, Undo2 } from 'lucide-react';
-import type { Stroke } from '@/lib/store';
+import type { Stroke } from '@/lib/localstore';
 
 export interface DrawAsset { strokes: Stroke[]; aspect: number }
 

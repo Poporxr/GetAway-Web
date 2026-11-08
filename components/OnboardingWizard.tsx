@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Building2, Check, Landmark, Loader2, Percent, School } from 'lucide-react';
 import { UNIVERSITIES, BANKS } from '@/lib/lists';
 import { POLICY_VERSION } from '@/lib/money';
+import { getSessionUserId, onboardingStep } from '@/lib/localstore';
 
 interface Initial { school: string; department: string; bankName: string; bankCode: string; accountNumber: string; accountName: string }
 
@@ -27,17 +28,13 @@ export default function OnboardingWizard({ initial }: { initial: Initial }) {
 
   const post = async (payload: object) => {
     setBusy(true); setError(null);
-    try {
-      const res = await fetch('/api/onboarding', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j.error || 'Could not save. Try again.');
-      return true;
-    } catch (e: any) {
-      setError(e.message);
-      return false;
-    } finally {
-      setBusy(false);
-    }
+    // Mockup: onboarding steps are validated and saved in the local store.
+    const userId = getSessionUserId();
+    if (!userId) { setError('Not signed in.'); setBusy(false); router.push('/login'); return false; }
+    const result = onboardingStep(userId, payload);
+    setBusy(false);
+    if (!result.ok) { setError(result.error || 'Could not save. Try again.'); return false; }
+    return true;
   };
 
   const stepsMeta = [
@@ -119,7 +116,7 @@ export default function OnboardingWizard({ initial }: { initial: Initial }) {
         )}
 
         {step === 2 && (
-          <form onSubmit={async (e) => { e.preventDefault(); if (await post({ step: 'commission', accepted })) { router.push('/dashboard'); router.refresh(); } }}>
+          <form onSubmit={async (e) => { e.preventDefault(); if (await post({ step: 'commission', accepted })) { router.push('/dashboard'); } }}>
             <div className="rounded-2xl bg-violet-50 p-4 text-sm leading-relaxed text-violet-950">
               <p className="font-bold">The one fee, in plain words</p>
               <p className="mt-1">SignOut keeps <strong>10% of every successful gift payment</strong> as a platform commission. The remaining 90% is yours. The fee is calculated on the full amount paid (gift + any signature-size surcharge) and is shown to contributors before they pay — no hidden charges, ever.</p>

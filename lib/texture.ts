@@ -3,7 +3,7 @@
 // as stroke vectors / typed text (never raster), so they render identically
 // on every device and reload.
 import { TEXTURE_SIZE, templateToPx, templatePxScale, type ShirtType } from './uv';
-import type { SignatureRec } from './store';
+import type { SignatureRec } from './localstore';
 
 function fabricBase(ctx: CanvasRenderingContext2D) {
   ctx.fillStyle = '#fcfcf9';

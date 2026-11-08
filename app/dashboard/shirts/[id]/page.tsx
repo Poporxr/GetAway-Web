@@ -1,19 +1,30 @@
+'use client';
+
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { requireUser } from '@/lib/auth';
-import { loadDB } from '@/lib/store';
+import { useParams } from 'next/navigation';
+import { useClientDB } from '@/lib/hooks';
+import { getSessionUserId } from '@/lib/localstore';
 import { fmt } from '@/lib/money';
 import ShirtViewer from '@/components/ShirtViewer';
-import { CopyButton } from '@/components/ui';
+import { CopyButton, LoadingBlock } from '@/components/ui';
 
-export const dynamic = 'force-dynamic';
+export default function ShirtDetailPage() {
+  const params = useParams();
+  const id = String(params.id ?? '');
+  const { ready, db } = useClientDB();
+  const userId = ready ? getSessionUserId() : null;
+  if (!ready || !db) return <LoadingBlock />;
 
-export default async function ShirtDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requireUser();
-  const { id } = await params;
-  const db = loadDB();
-  const shirt = db.shirts.find((s) => s.id === id && s.ownerId === user.id);
-  if (!shirt) notFound();
+  const shirt = db.shirts.find((s) => s.id === id && s.ownerId === userId);
+  if (!shirt) {
+    return (
+      <div className="py-16 text-center">
+        <h2 className="text-xl font-extrabold text-stone-900">Shirt not found</h2>
+        <p className="mt-1 text-sm text-stone-500">This shirt does not exist in this browser&apos;s store, or it is not yours.</p>
+        <Link href="/dashboard" className="mt-4 inline-block rounded-full bg-violet-600 px-5 py-2.5 text-sm font-bold text-white">← All shirts</Link>
+      </div>
+    );
+  }
   const sigs = db.signatures.filter((s) => s.shirtId === shirt.id);
   const gifts = db.payments
     .filter((p) => p.shirtId === shirt.id && p.status === 'success')

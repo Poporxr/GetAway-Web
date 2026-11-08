@@ -24,14 +24,23 @@ signatures so every page looks alive. Her tee:
 future expiry/CVV succeeds; any other card is declined (there is also a
 "simulate decline" button). A banner marks test mode on every page.
 
-Data lives in `data/store.json` (created and seeded on first run). Delete the
-file and restart to reset to the pristine seed state.
+**Persistence is this browser's localStorage only.** This is a mockup: there
+is no server database and no API layer. On first load the app seeds a demo
+database into localStorage (key `signout-db-v1`) and afterwards reads/writes
+only there; the signed-in session is a second localStorage key holding the
+current user id. Consequences, by design:
+
+- Data is **per device and per browser**. A shirt link created on one device
+  will not resolve on another (each browser has its own seeded demo world).
+- **Clearing browser storage resets everything** to the pristine seed state
+  (demo owner, two shirts, six gifts, six signatures).
+- Nothing you do in the app leaves your device.
 
 ## What is real vs mocked
 
-**Real (full business logic, server-side):**
-- Pricing in integer kobo via API routes: minimum gift ₦2,000 (includes 1×
-  signature); gifts ≥ ₦5,000 unlock 2× (+₦500), 3× (+₦700), 4× (+₦1,000).
+**Real (full business logic, running client-side in `lib/localstore.ts`):**
+- Pricing in integer kobo via the local store: minimum gift ₦2,000 (includes
+  1× signature); gifts ≥ ₦5,000 unlock 2× (+₦500), 3× (+₦700), 4× (+₦1,000).
 - 10% platform commission on the full payment, disclosed to contributors
   before paying and explicitly acknowledged by owners during onboarding
   (acceptance + policy version + timestamp stored).
@@ -41,23 +50,27 @@ file and restart to reset to the pristine seed state.
 - Signature editor: draw on a canvas pad (strokes stored as vectors) or type
   in a handwriting font (Caveat), 7 pen colours, front/back choice, drag
   placement on a flat template with rotation, bounds + overlap collision
-  checks enforced on both client and server.
+  checks enforced in the editor and re-validated by the store on submit.
 - Signatures composite into the garment's 2048×2048 texture canvas at the
   mapped UV position and render on the 3D model; they persist in the store
-  and render identically on every reload/device because they are stored as
+  and render identically on every reload because they are stored as
   structured data (surface, x, y, scale, rotation, strokes/text), never raster.
 - Owner dashboard: live 3D shirts, share links with copy button, earnings
   (gifts, gross, fees, available/pending), gift history, per-shirt detail.
-- Auth: email + password (scrypt-hashed) with cookie sessions.
+- Auth: email + password accounts in the local store; the session is a
+  localStorage key with the current user id, and route guards run
+  client-side. Passwords are hashed with a tiny synchronous salted hash —
+  node scrypt cannot run in a browser, and this is **mockup-grade only, not
+  real password security** (the data never leaves the visitor's own device).
 - Withdrawals: balance derived from the ledger, idempotency keys, gated on
   student verification.
-- Onboarding order enforced server-side: school/department → bank account →
+- Onboarding order enforced by the store: school/department → bank account →
   commission acknowledgement. One shirt per design per owner (max two shirts),
   unique unguessable slug per shirt.
 
 **Mocked / simulated (by design, per prototype scope):**
 - Payments: a mock checkout page styled like Paystack. Settlement flows
-  through `settlePayment()` in `lib/payments.ts` — the exact seam where real
+  through `settlePayment()` in `lib/localstore.ts` — the exact seam where real
   Paystack verification/webhook handling plugs in later (verified amount in,
   entitlement + ledger entries out). Swapping in real Paystack only touches
   the checkout creation and confirm steps.
@@ -65,7 +78,7 @@ file and restart to reset to the pristine seed state.
   (the file itself is not uploaded/stored). Admin review is out of scope, so
   the status stays "pending review" (simulated queue) and the withdrawal gate
   therefore stays locked in this build — the gate logic itself is real and
-  API-tested (403 while unverified).
+  rejects withdrawal requests while the owner is unverified.
 - Withdrawal payouts stay "pending" (no payout processor, no admin console).
 
 ## 3D models — sourcing, licences, and honest gaps
@@ -116,16 +129,28 @@ replaces the tee's printed design.
 
 ## Verification performed
 
-- `npm run build` — passes (all 27 routes).
-- Production server booted; every main route returns 200 (unknown slugs 404).
-- 38-check API flow test, all passing: pricing rejections (₦1,500 gift,
-  locked sizes), quote math (₦5,000 + 3× = ₦5,700 total, ₦570 fee, ₦5,130
-  owner share), declined-then-successful mock payment, entitlement issuance,
-  type-mode and draw-mode signature placement, single-use enforcement (409),
-  overlap rejection (409), persistence on the public shirt, demo login,
-  dashboard balance (₦29,880 after test earnings), withdrawal gate (403),
-  verification submission, onboarding order enforcement, duplicate-shirt
-  block (409).
+(localStorage refactor, 2026-11-08; the earlier server build's 38-check API
+flow test is superseded by the equivalent store-level test below.)
+
+- `npm run build` — passes. No `/api` routes remain; every page is a static
+  shell or thin wrapper that reads the local store after mount.
+- Production server booted; all main routes return 200 (/, /login, /signup,
+  /onboarding, /dashboard + tabs, /s/adaeze-signs-out-k7x2,
+  /s/adaeze-longsleeve-m3p9, /pay/…, /sign/…). Unknown slugs/tokens render
+  their not-found state client-side after mount — with no server data layer
+  there is nothing to answer 404.
+- Store logic test (39 checks, all passing): `lib/localstore.ts` compiled
+  standalone and exercised in node behind a localStorage shim — seed on
+  first load; demo login and wrong-password rejection; pricing rejections
+  (₦1,500 gift, locked sizes); quote math (₦5,000 + 3× = ₦5,700 total,
+  ₦570 fee, ₦5,130 owner share); declined-then-successful mock payment;
+  entitlement issuance; signature placement with overlap and out-of-bounds
+  rejection; single-use enforcement; the new signature visible via the
+  public-shirt view; dashboard balance ₦21,150 → ₦26,280 after the test
+  gift; withdrawal gate while unverified; verification submission;
+  onboarding order enforcement; duplicate-shirt block; shirt-full at 60;
+  and a persistence round-trip (fresh module load over the same
+  localStorage: data, session and balances intact, no reseed).
 - Not verified in this environment: the WebGL canvas render itself (no
   browser binary on the VM). The viewer includes a 2D fallback if WebGL is
   unavailable; open the app in a browser to eyeball the 3D result.

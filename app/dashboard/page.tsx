@@ -1,19 +1,21 @@
+'use client';
+
 import Link from 'next/link';
 import { Gift, Inbox, PiggyBank, Shirt as ShirtIcon, TrendingDown, Wallet } from 'lucide-react';
-import { requireUser } from '@/lib/auth';
-import { loadDB, ownerBalance } from '@/lib/store';
+import { useClientDB } from '@/lib/hooks';
+import { getSessionUserId, ownerBalance } from '@/lib/localstore';
 import { fmt } from '@/lib/money';
 import ShirtViewer from '@/components/ShirtViewer';
-import { CopyButton } from '@/components/ui';
+import { CopyButton, LoadingBlock } from '@/components/ui';
 import { CreateShirtButton } from '@/components/DashboardWidgets';
 
-export const dynamic = 'force-dynamic';
+export default function DashboardPage() {
+  const { ready, db, refresh } = useClientDB();
+  const userId = ready ? getSessionUserId() : null;
+  if (!ready || !db || !userId) return <LoadingBlock />;
 
-export default async function DashboardPage() {
-  const user = await requireUser();
-  const db = loadDB();
-  const balance = ownerBalance(db, user.id);
-  const shirts = db.shirts.filter((s) => s.ownerId === user.id);
+  const balance = ownerBalance(db, userId);
+  const shirts = db.shirts.filter((s) => s.ownerId === userId);
   const base = process.env.NEXT_PUBLIC_BASE_URL || 'https://signout.ng';
 
   const stats = [
@@ -44,8 +46,8 @@ export default async function DashboardPage() {
           <p className="mt-2 font-bold text-stone-700">No shirts yet</p>
           <p className="mx-auto mt-1 max-w-sm text-sm text-stone-500">Create your first signing-out shirt and share the link with your people.</p>
           <div className="mt-4 flex justify-center gap-3">
-            <CreateShirtButton type="tee" label="Create the classic tee" />
-            <CreateShirtButton type="longsleeve" label="Create the long-sleeve" />
+            <CreateShirtButton type="tee" label="Create the classic tee" onCreated={refresh} />
+            <CreateShirtButton type="longsleeve" label="Create the long-sleeve" onCreated={refresh} />
           </div>
         </div>
       )}
@@ -80,8 +82,8 @@ export default async function DashboardPage() {
       {shirts.length > 0 && shirts.length < 2 && (
         <div className="mt-5 flex flex-wrap items-center gap-3 rounded-3xl bg-violet-50 p-5 ring-1 ring-violet-100">
           <p className="text-sm font-semibold text-violet-900">You can have one of each design — add your second shirt:</p>
-          {!shirts.some((s) => s.type === 'tee') && <CreateShirtButton type="tee" label="Add the classic tee" />}
-          {!shirts.some((s) => s.type === 'longsleeve') && <CreateShirtButton type="longsleeve" label="Add the long-sleeve" />}
+          {!shirts.some((s) => s.type === 'tee') && <CreateShirtButton type="tee" label="Add the classic tee" onCreated={refresh} />}
+          {!shirts.some((s) => s.type === 'longsleeve') && <CreateShirtButton type="longsleeve" label="Add the long-sleeve" onCreated={refresh} />}
         </div>
       )}
     </div>

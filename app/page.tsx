@@ -1,10 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { BadgeCheck, Link2, MousePointerClick, PenLine, Shirt, Wallet } from 'lucide-react';
-import { loadDB } from '@/lib/store';
+import { useClientDB } from '@/lib/hooks';
 import ShirtViewer from '@/components/ShirtViewer';
-import { CopyButton } from '@/components/ui';
-
-export const dynamic = 'force-dynamic';
+import { CopyButton, LoadingBlock } from '@/components/ui';
 
 const STEPS = [
   { icon: Shirt, title: 'Create your shirt', text: 'Pick the classic tee or the long-sleeve. You get a personal link in under two minutes.' },
@@ -14,10 +14,12 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
-  const db = loadDB();
-  const demoShirt = db.shirts.find((s) => s.slug === 'adaeze-signs-out-k7x2') ?? db.shirts[0];
-  const demoSigs = demoShirt ? db.signatures.filter((s) => s.shirtId === demoShirt.id) : [];
-  const demoOwner = demoShirt ? db.users.find((u) => u.id === demoShirt.ownerId) : null;
+  // The demo shirt lives in the visitor's localStorage store; it only exists
+  // after mount, so the hero demo fills in once the store is ready.
+  const { db } = useClientDB();
+  const demoShirt = db?.shirts.find((s) => s.slug === 'adaeze-signs-out-k7x2') ?? db?.shirts[0];
+  const demoSigs = demoShirt && db ? db.signatures.filter((s) => s.shirtId === demoShirt.id) : [];
+  const demoOwner = demoShirt && db ? db.users.find((u) => u.id === demoShirt.ownerId) : null;
   const demoUrl = demoShirt ? `/s/${demoShirt.slug}` : '/signup';
 
   return (
@@ -55,7 +57,11 @@ export default function LandingPage() {
             <p className="text-sm font-bold text-stone-700">Live demo — {demoOwner?.name ?? 'Adaeze'}&apos;s shirt</p>
             <span className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-bold text-violet-700 ring-1 ring-violet-200">drag to spin · scroll to zoom</span>
           </div>
-          {demoShirt && <ShirtViewer type={demoShirt.type} signatures={demoSigs} height={430} />}
+          {demoShirt ? (
+            <ShirtViewer type={demoShirt.type} signatures={demoSigs} height={430} />
+          ) : (
+            <div style={{ height: 430 }}><LoadingBlock label="Loading the demo shirt…" /></div>
+          )}
           <div className="flex flex-wrap items-center gap-2 px-5 pb-5">
             <Link href={demoUrl} className="rounded-full bg-stone-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-stone-700">Gift &amp; sign this shirt</Link>
             <span className="text-xs text-stone-400">…or copy the demo link:</span>

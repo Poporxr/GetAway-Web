@@ -1,14 +1,17 @@
+'use client';
+
 import { Gift } from 'lucide-react';
-import { requireUser } from '@/lib/auth';
-import { loadDB } from '@/lib/store';
+import { useClientDB } from '@/lib/hooks';
+import { getSessionUserId } from '@/lib/localstore';
 import { fmt } from '@/lib/money';
+import { LoadingBlock } from '@/components/ui';
 
-export const dynamic = 'force-dynamic';
+export default function GiftsPage() {
+  const { ready, db } = useClientDB();
+  const userId = ready ? getSessionUserId() : null;
+  if (!ready || !db || !userId) return <LoadingBlock />;
 
-export default async function GiftsPage() {
-  const user = await requireUser();
-  const db = loadDB();
-  const myShirts = new Map(db.shirts.filter((s) => s.ownerId === user.id).map((s) => [s.id, s]));
+  const myShirts = new Map(db.shirts.filter((s) => s.ownerId === userId).map((s) => [s.id, s]));
   const payments = db.payments
     .filter((p) => myShirts.has(p.shirtId))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));

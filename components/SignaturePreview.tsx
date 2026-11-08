@@ -1,4 +1,4 @@
-import type { SignatureRec } from '@/lib/store';
+import type { SignatureRec } from '@/lib/localstore';
 
 // Renders one signature (strokes or typed text) inside a box of the given
 // template width (fraction of the signing region). Used by the flat template,

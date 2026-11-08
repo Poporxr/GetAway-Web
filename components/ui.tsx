@@ -1,7 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Copy, GraduationCap } from 'lucide-react';
+import { Check, Copy, GraduationCap, Loader2 } from 'lucide-react';
+
+export function LoadingBlock({ label = 'Loading…' }: { label?: string }) {
+  return (
+    <div className="flex items-center justify-center gap-2 py-24 text-stone-400">
+      <Loader2 className="animate-spin" /> {label}
+    </div>
+  );
+}
 
 export function Logo({ light = false }: { light?: boolean }) {
   return (

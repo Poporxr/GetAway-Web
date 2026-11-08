@@ -4,12 +4,19 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, LogOut, Plus } from 'lucide-react';
 import { fmt } from '@/lib/money';
+import {
+  createShirt as createShirtLocal,
+  getSessionUserId,
+  logout as logoutLocal,
+  requestWithdrawal as requestWithdrawalLocal,
+  submitVerification as submitVerificationLocal,
+} from '@/lib/localstore';
 
 export function LogoutButton() {
   const router = useRouter();
   return (
     <button
-      onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/'); router.refresh(); }}
+      onClick={() => { logoutLocal(); router.push('/'); }}
       className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-stone-500 hover:bg-stone-100"
     >
       <LogOut size={15} /> Log out
@@ -17,7 +24,7 @@ export function LogoutButton() {
   );
 }
 
-export function CreateShirtButton({ type, label }: { type: 'tee' | 'longsleeve'; label: string }) {
+export function CreateShirtButton({ type, label, onCreated }: { type: 'tee' | 'longsleeve'; label: string; onCreated?: () => void }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,12 +32,14 @@ export function CreateShirtButton({ type, label }: { type: 'tee' | 'longsleeve';
     <div>
       <button
         disabled={busy}
-        onClick={async () => {
+        onClick={() => {
+          const userId = getSessionUserId();
+          if (!userId) { router.push('/login'); return; }
           setBusy(true); setError(null);
-          const res = await fetch('/api/shirts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type }) });
-          const j = await res.json();
-          if (!res.ok) { setError(j.error); setBusy(false); return; }
-          router.refresh();
+          const result = createShirtLocal(userId, type);
+          if (!result.ok) { setError(result.error); setBusy(false); return; }
+          setBusy(false);
+          if (onCreated) onCreated();
         }}
         className="flex items-center gap-2 rounded-full bg-violet-600 px-5 py-3 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50"
       >
@@ -44,7 +53,7 @@ export function CreateShirtButton({ type, label }: { type: 'tee' | 'longsleeve';
 const inputCls = 'mt-1 w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100';
 const labelCls = 'text-xs font-bold uppercase tracking-wide text-stone-500';
 
-export function VerificationForm() {
+export function VerificationForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const router = useRouter();
   const [idType, setIdType] = useState('Student ID card');
   const [idNumber, setIdNumber] = useState('');
@@ -54,12 +63,15 @@ export function VerificationForm() {
   return (
     <form
       className="space-y-3"
-      onSubmit={async (e) => {
-        e.preventDefault(); setBusy(true); setError(null);
-        const res = await fetch('/api/verification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idType, idNumber, evidenceName: evidenceName || `${idType} (file name not captured)` }) });
-        const j = await res.json();
-        if (!res.ok) { setError(j.error); setBusy(false); return; }
-        router.refresh();
+      onSubmit={(e) => {
+        e.preventDefault();
+        const userId = getSessionUserId();
+        if (!userId) { router.push('/login'); return; }
+        setBusy(true); setError(null);
+        const result = submitVerificationLocal(userId, { idType, idNumber, evidenceName: evidenceName || `${idType} (file name not captured)` });
+        if (!result.ok) { setError(result.error); setBusy(false); return; }
+        setBusy(false);
+        if (onSubmitted) onSubmitted();
       }}
     >
       <div>
@@ -88,7 +100,7 @@ export function VerificationForm() {
   );
 }
 
-export function WithdrawForm({ availableKobo, bankLine }: { availableKobo: number; bankLine: string }) {
+export function WithdrawForm({ availableKobo, bankLine, onDone }: { availableKobo: number; bankLine: string; onDone?: () => void }) {
   const router = useRouter();
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
@@ -97,18 +109,17 @@ export function WithdrawForm({ availableKobo, bankLine }: { availableKobo: numbe
   return (
     <form
       className="space-y-3"
-      onSubmit={async (e) => {
-        e.preventDefault(); setBusy(true); setError(null); setDone(null);
-        const res = await fetch('/api/withdrawals', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amountNaira: Number(amount), idempotencyKey: `wd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` }),
-        });
-        const j = await res.json();
-        if (!res.ok) { setError(j.error); setBusy(false); return; }
-        setDone(`Withdrawal of ${fmt(j.withdrawal.amountKobo)} requested — status: pending payout.`);
+      onSubmit={(e) => {
+        e.preventDefault();
+        const userId = getSessionUserId();
+        if (!userId) { router.push('/login'); return; }
+        setBusy(true); setError(null); setDone(null);
+        const result = requestWithdrawalLocal(userId, { amountNaira: Number(amount), idempotencyKey: `wd-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` });
+        if (!result.ok) { setError(result.error); setBusy(false); return; }
+        setDone(`Withdrawal of ${fmt(result.withdrawal.amountKobo)} requested — status: pending payout.`);
         setAmount('');
         setBusy(false);
-        router.refresh();
+        if (onDone) onDone();
       }}
     >
       <div>

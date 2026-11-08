@@ -1,10 +1,12 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { requireUser } from '@/lib/auth';
-import { loadDB } from '@/lib/store';
-import { LogoutButton } from '@/components/DashboardWidgets';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useClientDB } from '@/lib/hooks';
+import { getSessionUserId } from '@/lib/localstore';
+import { LogoutButton } from '@/components/DashboardWidgets';
+import { LoadingBlock } from '@/components/ui';
 
 const TABS = [
   { href: '/dashboard', label: 'Overview' },
@@ -13,11 +15,26 @@ const TABS = [
   { href: '/dashboard/withdrawals', label: 'Withdrawals' },
 ];
 
-export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser();
-  const db = loadDB();
-  const profile = db.profiles.find((p) => p.userId === user.id);
-  if (!profile?.commissionAcceptedAt) redirect('/onboarding');
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const { ready, db } = useClientDB();
+  const userId = ready ? getSessionUserId() : null;
+  const user = ready && db && userId ? db.users.find((u) => u.id === userId) : undefined;
+  const profile = ready && db && userId ? db.profiles.find((p) => p.userId === userId) : undefined;
+  const blocked = ready && (!userId || !profile?.commissionAcceptedAt);
+
+  // Client-side route guards (the session lives in localStorage).
+  useEffect(() => {
+    if (!ready) return;
+    if (!userId) router.replace('/login');
+    else if (!profile?.commissionAcceptedAt) router.replace('/onboarding');
+  }, [ready, userId, profile, router]);
+
+  if (!ready || blocked || !user || !profile) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 pb-16"><LoadingBlock /></div>
+    );
+  }
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16">
       <div className="flex flex-wrap items-end justify-between gap-3 pt-8">
