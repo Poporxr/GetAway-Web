@@ -54,23 +54,33 @@ export interface DB {
 }
 
 // ---------- persistence (single JSON file; sync IO keeps the prototype race-free) ----------
-const DATA_DIR = path.join(process.cwd(), 'data');
+// On Vercel the project filesystem is read-only, so the store lives in /tmp there
+// (per-instance and reset on cold starts; fine for a prototype, a real DB comes later).
+const DATA_DIR = process.env.VERCEL ? '/tmp/signout-data' : path.join(process.cwd(), 'data');
 const FILE = path.join(DATA_DIR, 'store.json');
+let cache: DB | null = null;
 
 export const id = (p: string) => `${p}_${crypto.randomBytes(6).toString('hex')}`;
 export const nowISO = () => new Date().toISOString();
 
 export function loadDB(): DB {
-  if (!fs.existsSync(FILE)) {
-    const db = seed();
-    persist(db);
-    return db;
-  }
-  return JSON.parse(fs.readFileSync(FILE, 'utf8')) as DB;
+  if (cache) return cache;
+  try {
+    if (fs.existsSync(FILE)) {
+      cache = JSON.parse(fs.readFileSync(FILE, 'utf8')) as DB;
+      return cache;
+    }
+  } catch { /* unreadable store: fall through and reseed */ }
+  const db = seed();
+  persist(db);
+  return db;
 }
 export function persist(db: DB) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(db, null, 2));
+  cache = db;
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(FILE, JSON.stringify(db, null, 2));
+  } catch { /* read-only filesystem (serverless): in-memory cache still serves this instance */ }
 }
 export function updateDB<T>(fn: (db: DB) => T): T {
   const db = loadDB();
