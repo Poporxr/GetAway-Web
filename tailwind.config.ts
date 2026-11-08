@@ -5,10 +5,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#0A0E0C",
-        paper: "#F4F1EA",
-        sage: "#DAE6D8",
-        olive: "#7B930A",
+        paper: "#FAF8F3",
+        cream: "#F3EFE3",
+      },
+      fontFamily: {
+        hand: ["Caveat", "Segoe Script", "cursive"],
       },
     },
   },

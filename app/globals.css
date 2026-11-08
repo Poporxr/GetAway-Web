@@ -1,18 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+html {
+  scroll-behavior: smooth;
 }
 
-@layer utilities {
-  /* Hide scrollbars on horizontal rails while keeping scroll */
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
+body {
+  background-color: #FAF8F3;
+  color: #1c1917;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #ddd6fe;
 }

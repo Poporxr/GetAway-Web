@@ -17,3 +17,6 @@ npm-debug.*
 
 # typescript
 *.tsbuildinfo
+
+# 3D models are hosted on Cloudinary (binary, cannot ride the text snapshot push)
+public/models/*.glb
